@@ -130,7 +130,6 @@ public class LoggingHouseClientExtension implements ServiceExtension {
     private TransferProcessStore transferProcessStore;
     @Inject
     private AssetIndex assetIndex;
-    @Inject
     private ObjectMapper objectMapper;
 
     public Monitor monitor;
@@ -147,6 +146,8 @@ public class LoggingHouseClientExtension implements ServiceExtension {
     @Override
     public void initialize(ServiceExtensionContext context) {
         monitor = context.getMonitor();
+
+        objectMapper = new ObjectMapper();
 
         var extensionEnabled = context.getSetting(LOGGINGHOUSE_ENABLED_SETTING, true);
         if (!extensionEnabled) {
