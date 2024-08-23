@@ -14,6 +14,7 @@
 
 package com.truzzt.extension.logginghouse.client;
 
+import com.truzzt.extension.logginghouse.client.events.ConnectorAvailableEvent;
 import com.truzzt.extension.logginghouse.client.events.LoggingHouseEventSubscriber;
 import com.truzzt.extension.logginghouse.client.events.messages.CreateProcessMessageSender;
 import com.truzzt.extension.logginghouse.client.events.messages.LogMessageSender;
@@ -31,7 +32,10 @@ import com.truzzt.extension.logginghouse.client.worker.LoggingHouseWorkersManage
 import com.truzzt.extension.logginghouse.client.worker.WorkersExecutor;
 import de.fraunhofer.iais.eis.LogMessage;
 import de.fraunhofer.iais.eis.RequestMessage;
+import org.eclipse.edc.connector.contract.spi.event.contractnegotiation.ContractNegotiationAgreed;
 import org.eclipse.edc.connector.contract.spi.event.contractnegotiation.ContractNegotiationFinalized;
+import org.eclipse.edc.connector.contract.spi.event.contractnegotiation.ContractNegotiationTerminated;
+import org.eclipse.edc.connector.contract.spi.event.contractnegotiation.ContractNegotiationVerified;
 import org.eclipse.edc.connector.contract.spi.negotiation.store.ContractNegotiationStore;
 import org.eclipse.edc.connector.transfer.spi.event.TransferProcessCompleted;
 import org.eclipse.edc.connector.transfer.spi.event.TransferProcessFailed;
@@ -45,6 +49,7 @@ import org.eclipse.edc.runtime.metamodel.annotation.Inject;
 import org.eclipse.edc.runtime.metamodel.annotation.Requires;
 import org.eclipse.edc.spi.EdcException;
 import org.eclipse.edc.spi.asset.AssetIndex;
+import org.eclipse.edc.spi.event.EventEnvelope;
 import org.eclipse.edc.spi.event.EventRouter;
 import org.eclipse.edc.spi.http.EdcHttpClient;
 import org.eclipse.edc.spi.iam.IdentityService;
@@ -62,6 +67,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.Duration;
 import java.util.Map;
+import java.util.UUID;
 
 import static com.truzzt.extension.logginghouse.client.ConfigConstants.LOGGINGHOUSE_ENABLED_SETTING;
 import static com.truzzt.extension.logginghouse.client.ConfigConstants.LOGGINGHOUSE_EXTENSION_MAX_WORKERS;
@@ -157,6 +163,19 @@ public class LoggingHouseClientExtension implements ServiceExtension {
 
         registerDispatcher(context);
         workersManager = initializeWorkersManager(context, store);
+
+        // Sending a hello message to LoggingHouse
+        var currentTime = System.currentTimeMillis();
+        ConnectorAvailableEvent connectorAvailableEvent = new ConnectorAvailableEvent(
+                UUID.randomUUID().toString(),
+                context.getConnectorId(),
+                "{\"message\": \"Hello Logginghouse\", \"connectorStartDate\": " + currentTime + "}"
+        );
+        var eventEnvelope = EventEnvelope.Builder.newInstance()
+                .at(currentTime)
+                .payload(connectorAvailableEvent)
+                .build();
+        eventRouter.publish(eventEnvelope);
     }
 
     private URL readUrlFromSettings(ServiceExtensionContext context) {
@@ -204,7 +223,10 @@ public class LoggingHouseClientExtension implements ServiceExtension {
                 transferProcessStore,
                 monitor);
 
+        eventRouter.registerSync(ContractNegotiationAgreed.class, eventSubscriber);
+        eventRouter.registerSync(ContractNegotiationVerified.class, eventSubscriber);
         eventRouter.registerSync(ContractNegotiationFinalized.class, eventSubscriber);
+        eventRouter.registerSync(ContractNegotiationTerminated.class, eventSubscriber);
 
         eventRouter.registerSync(TransferProcessRequested.class, eventSubscriber);
         eventRouter.registerSync(TransferProcessInitiated.class, eventSubscriber);

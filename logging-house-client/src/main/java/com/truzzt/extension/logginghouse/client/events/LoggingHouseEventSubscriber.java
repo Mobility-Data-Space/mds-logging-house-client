@@ -69,6 +69,14 @@ public class LoggingHouseEventSubscriber implements EventSubscriber {
             } catch (Exception e) {
                 monitor.warning("Could not store TransferProcess: " + e.getMessage());
             }
+        } else if (event.getPayload() instanceof CustomLoggingHouseEvent customLoggingHouseEvent) {
+            monitor.debug("Storing CustomLoggingHouseEvent for Logginghouse PID: " + customLoggingHouseEvent.getProcessId());
+
+            try {
+                storeCustomLoggingHouseEvent(customLoggingHouseEvent);
+            } catch (Exception e) {
+                monitor.warning("Could not store CustomLoggingHouseEvent: " + e.getMessage());
+            }
         }
     }
 
@@ -109,6 +117,21 @@ public class LoggingHouseEventSubscriber implements EventSubscriber {
                 .eventToLog(transferProcess)
                 .createProcess(false)
                 .processId(transferProcess.getContractId())
+                .status(LoggingHouseMessageStatus.PENDING)
+                .createdAt(ZonedDateTime.now())
+                .build();
+        loggingHouseMessageStore.save(message);
+    }
+
+    public void storeCustomLoggingHouseEvent(CustomLoggingHouseEvent event) {
+        monitor.info("Storing CustomLoggingHouseEvent to send to LoggingHouse");
+
+        var message = LoggingHouseMessage.Builder.newInstance()
+                .eventType(event.getClass())
+                .eventId(event.getEventId())
+                .eventToLog(event.getMessageBody())
+                .createProcess(false)
+                .processId(event.getProcessId())
                 .status(LoggingHouseMessageStatus.PENDING)
                 .createdAt(ZonedDateTime.now())
                 .build();
