@@ -14,6 +14,8 @@
 
 package com.truzzt.extension.logginghouse.client.events;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.truzzt.extension.logginghouse.client.spi.store.LoggingHouseMessageStore;
 import com.truzzt.extension.logginghouse.client.spi.types.LoggingHouseMessage;
 import com.truzzt.extension.logginghouse.client.spi.types.LoggingHouseMessageStatus;
@@ -37,16 +39,19 @@ public class LoggingHouseEventSubscriber implements EventSubscriber {
     private final ContractNegotiationStore contractNegotiationStore;
     private final TransferProcessStore transferProcessStore;
     private final Monitor monitor;
+    private final ObjectMapper objectMapper;
 
     public LoggingHouseEventSubscriber(
             LoggingHouseMessageStore loggingHouseMessageStore,
             ContractNegotiationStore contractNegotiationStore,
             TransferProcessStore transferProcessStore,
-            Monitor monitor) {
+            Monitor monitor,
+            ObjectMapper objectMapper) {
         this.loggingHouseMessageStore = loggingHouseMessageStore;
         this.contractNegotiationStore = contractNegotiationStore;
         this.transferProcessStore = transferProcessStore;
         this.monitor = monitor;
+        this.objectMapper = objectMapper;
     }
 
     @Override
@@ -91,13 +96,15 @@ public class LoggingHouseEventSubscriber implements EventSubscriber {
         return transferProcessStore.findById(transferProcessId);
     }
 
-    public void storeContractAgreement(ContractAgreement contractAgreement) {
+    public void storeContractAgreement(ContractAgreement contractAgreement) throws JsonProcessingException {
         monitor.info("Storing ContractAgreement to send to LoggingHouse");
 
+        var eventPayload = objectMapper.writeValueAsString(contractAgreement);
+
         var message = LoggingHouseMessage.Builder.newInstance()
-                .eventType(contractAgreement.getClass())
+                .eventType(contractAgreement.getClass().getSimpleName())
                 .eventId(contractAgreement.getId())
-                .eventToLog(contractAgreement)
+                .eventToLog(eventPayload)
                 .createProcess(true)
                 .processId(contractAgreement.getId())
                 .consumerId(contractAgreement.getConsumerId())
@@ -108,13 +115,15 @@ public class LoggingHouseEventSubscriber implements EventSubscriber {
         loggingHouseMessageStore.save(message);
     }
 
-    public void storeTransferProcess(TransferProcess transferProcess) {
+    public void storeTransferProcess(TransferProcess transferProcess) throws JsonProcessingException {
         monitor.info("Storing TransferProcess to send to LoggingHouse");
 
+        var eventPayload = objectMapper.writeValueAsString(transferProcess);
+
         var message = LoggingHouseMessage.Builder.newInstance()
-                .eventType(transferProcess.getClass())
+                .eventType(transferProcess.getClass().getSimpleName())
                 .eventId(transferProcess.getId())
-                .eventToLog(transferProcess)
+                .eventToLog(eventPayload)
                 .createProcess(false)
                 .processId(transferProcess.getContractId())
                 .status(LoggingHouseMessageStatus.PENDING)
@@ -127,7 +136,7 @@ public class LoggingHouseEventSubscriber implements EventSubscriber {
         monitor.info("Storing CustomLoggingHouseEvent to send to LoggingHouse");
 
         var message = LoggingHouseMessage.Builder.newInstance()
-                .eventType(event.getClass())
+                .eventType(event.getClass().getSimpleName())
                 .eventId(event.getEventId())
                 .eventToLog(event.getMessageBody())
                 .createProcess(false)

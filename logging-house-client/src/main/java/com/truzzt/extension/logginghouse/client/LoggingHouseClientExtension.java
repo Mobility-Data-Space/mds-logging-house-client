@@ -14,6 +14,7 @@
 
 package com.truzzt.extension.logginghouse.client;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.truzzt.extension.logginghouse.client.events.ConnectorAvailableEvent;
 import com.truzzt.extension.logginghouse.client.events.CustomLoggingHouseEvent;
 import com.truzzt.extension.logginghouse.client.events.LoggingHouseEventSubscriber;
@@ -129,6 +130,8 @@ public class LoggingHouseClientExtension implements ServiceExtension {
     private TransferProcessStore transferProcessStore;
     @Inject
     private AssetIndex assetIndex;
+    @Inject
+    private ObjectMapper objectMapper;
 
     public Monitor monitor;
     private boolean enabled;
@@ -212,7 +215,8 @@ public class LoggingHouseClientExtension implements ServiceExtension {
                 loggingHouseMessageStore,
                 contractNegotiationStore,
                 transferProcessStore,
-                monitor);
+                monitor,
+                objectMapper);
 
         eventRouter.registerSync(ContractNegotiationAgreed.class, eventSubscriber);
         eventRouter.registerSync(ContractNegotiationVerified.class, eventSubscriber);
