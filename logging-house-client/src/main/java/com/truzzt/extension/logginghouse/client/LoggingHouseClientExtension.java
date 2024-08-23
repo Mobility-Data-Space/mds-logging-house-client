@@ -15,6 +15,7 @@
 package com.truzzt.extension.logginghouse.client;
 
 import com.truzzt.extension.logginghouse.client.events.ConnectorAvailableEvent;
+import com.truzzt.extension.logginghouse.client.events.CustomLoggingHouseEvent;
 import com.truzzt.extension.logginghouse.client.events.LoggingHouseEventSubscriber;
 import com.truzzt.extension.logginghouse.client.events.messages.CreateProcessMessageSender;
 import com.truzzt.extension.logginghouse.client.events.messages.LogMessageSender;
@@ -224,6 +225,9 @@ public class LoggingHouseClientExtension implements ServiceExtension {
         eventRouter.registerSync(TransferProcessCompleted.class, eventSubscriber);
         eventRouter.registerSync(TransferProcessFailed.class, eventSubscriber);
         eventRouter.registerSync(TransferProcessTerminated.class, eventSubscriber);
+
+        eventRouter.registerSync(CustomLoggingHouseEvent.class, eventSubscriber);
+
         context.registerService(LoggingHouseEventSubscriber.class, eventSubscriber);
 
         monitor.debug("Registered event subscriber for LoggingHouseClientExtension");
