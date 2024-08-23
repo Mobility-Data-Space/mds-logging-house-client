@@ -133,6 +133,7 @@ public class LoggingHouseClientExtension implements ServiceExtension {
     private boolean enabled;
     private URL loggingHouseLogUrl;
     private LoggingHouseWorkersManager workersManager;
+    private String connectorId;
 
     @Override
     public String name() {
@@ -164,18 +165,7 @@ public class LoggingHouseClientExtension implements ServiceExtension {
         registerDispatcher(context);
         workersManager = initializeWorkersManager(context, store);
 
-        // Sending a hello message to LoggingHouse
-        var currentTime = System.currentTimeMillis();
-        ConnectorAvailableEvent connectorAvailableEvent = new ConnectorAvailableEvent(
-                UUID.randomUUID().toString(),
-                context.getConnectorId(),
-                "{\"message\": \"Hello Logginghouse\", \"connectorStartDate\": " + currentTime + "}"
-        );
-        var eventEnvelope = EventEnvelope.Builder.newInstance()
-                .at(currentTime)
-                .payload(connectorAvailableEvent)
-                .build();
-        eventRouter.publish(eventEnvelope);
+        connectorId = context.getConnectorId();
     }
 
     private URL readUrlFromSettings(ServiceExtensionContext context) {
@@ -298,6 +288,22 @@ public class LoggingHouseClientExtension implements ServiceExtension {
         } else {
             monitor.info("Starting Logginghouse client extension.");
             workersManager.execute();
+
+
+            // Sending a hello message to LoggingHouse
+            monitor.info("Sending Hello Message to LoggingHouse.");
+            var currentTime = System.currentTimeMillis();
+            ConnectorAvailableEvent connectorAvailableEvent = new ConnectorAvailableEvent(
+                    UUID.randomUUID().toString(),
+                    this.connectorId,
+                    "{\"message\": \"Hello Logginghouse\", \"connectorStartDate\": " + currentTime + "}"
+            );
+            var eventEnvelope = EventEnvelope.Builder.newInstance()
+                    .at(currentTime)
+                    .payload(connectorAvailableEvent)
+                    .build();
+            eventRouter.publish(eventEnvelope);
+            monitor.debug("'Hello Logginghouse' Event published.");
         }
     }
 
