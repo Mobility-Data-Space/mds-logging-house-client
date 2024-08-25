@@ -38,7 +38,7 @@ public class LoggingHouseMessage {
     public String getEventId() {
         return eventId;
     }
-    public Object getEventToLog() {
+    public String getEventToLog() {
         return eventToLog;
     }
     public boolean getCreateProcess() {

@@ -216,8 +216,9 @@ public class LoggingHouseClientExtension implements ServiceExtension {
                 loggingHouseMessageStore,
                 contractNegotiationStore,
                 transferProcessStore,
-                monitor,
-                objectMapper);
+                context.getConnectorId(),
+                assetIndex,
+                monitor);
 
         eventRouter.registerSync(ContractNegotiationAgreed.class, eventSubscriber);
         eventRouter.registerSync(ContractNegotiationVerified.class, eventSubscriber);
@@ -279,7 +280,7 @@ public class LoggingHouseClientExtension implements ServiceExtension {
         var httpClient = context.getService(EdcHttpClient.class);
         var objectMapper = typeManager.getMapper(TYPE_MANAGER_SERIALIZER_KEY);
 
-        var logMessageSender = new LogMessageSender(monitor, assetIndex, context.getConnectorId());
+        var logMessageSender = new LogMessageSender(monitor);
         var createProcessMessageSender = new CreateProcessMessageSender();
 
         var idsMultipartSender = new IdsMultipartSender(monitor, httpClient, identityService, objectMapper);

@@ -14,8 +14,7 @@
 
 package com.truzzt.extension.logginghouse.client.events;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.truzzt.extension.logginghouse.client.multipart.ids.multipart.CalendarUtil;
 import com.truzzt.extension.logginghouse.client.spi.store.LoggingHouseMessageStore;
 import com.truzzt.extension.logginghouse.client.spi.types.LoggingHouseMessage;
 import com.truzzt.extension.logginghouse.client.spi.types.LoggingHouseMessageStatus;
@@ -25,10 +24,12 @@ import org.eclipse.edc.connector.contract.spi.types.agreement.ContractAgreement;
 import org.eclipse.edc.connector.transfer.spi.event.TransferProcessEvent;
 import org.eclipse.edc.connector.transfer.spi.store.TransferProcessStore;
 import org.eclipse.edc.connector.transfer.spi.types.TransferProcess;
+import org.eclipse.edc.spi.asset.AssetIndex;
 import org.eclipse.edc.spi.event.Event;
 import org.eclipse.edc.spi.event.EventEnvelope;
 import org.eclipse.edc.spi.event.EventSubscriber;
 import org.eclipse.edc.spi.monitor.Monitor;
+import org.json.JSONObject;
 
 import java.time.ZonedDateTime;
 import java.util.Objects;
@@ -38,20 +39,21 @@ public class LoggingHouseEventSubscriber implements EventSubscriber {
     private final LoggingHouseMessageStore loggingHouseMessageStore;
     private final ContractNegotiationStore contractNegotiationStore;
     private final TransferProcessStore transferProcessStore;
+    private final String connectorId;
+    private final AssetIndex assetIndex;
     private final Monitor monitor;
-    private final ObjectMapper objectMapper;
 
     public LoggingHouseEventSubscriber(
             LoggingHouseMessageStore loggingHouseMessageStore,
             ContractNegotiationStore contractNegotiationStore,
-            TransferProcessStore transferProcessStore,
-            Monitor monitor,
-            ObjectMapper objectMapper) {
+            TransferProcessStore transferProcessStore, String connectorId, AssetIndex assetIndex,
+            Monitor monitor) {
         this.loggingHouseMessageStore = loggingHouseMessageStore;
         this.contractNegotiationStore = contractNegotiationStore;
         this.transferProcessStore = transferProcessStore;
+        this.connectorId = connectorId;
+        this.assetIndex = assetIndex;
         this.monitor = monitor;
-        this.objectMapper = objectMapper;
     }
 
     @Override
@@ -96,15 +98,42 @@ public class LoggingHouseEventSubscriber implements EventSubscriber {
         return transferProcessStore.findById(transferProcessId);
     }
 
-    public void storeContractAgreement(ContractAgreement contractAgreement) throws JsonProcessingException {
+    public void storeContractAgreement(ContractAgreement contractAgreement) {
+        assert contractAgreement != null;
         monitor.info("Storing ContractAgreement to send to LoggingHouse");
 
-        var eventPayload = objectMapper.writeValueAsString(contractAgreement);
+        var jo = new JSONObject();
+
+        jo.put("Timestamp", CalendarUtil.gregorianNow().toString());
+        jo.put("ConnectorId", connectorId);
+
+        // Check if connector is the provider
+        if (contractAgreement.getProviderId().equals(connectorId)) {
+            // In case of the provider, log asset information
+            var asset = assetIndex.findById(contractAgreement.getAssetId());
+
+            if (asset == null) {
+                monitor.warning("Asset with id " + contractAgreement.getAssetId() + " not found in asset index.");
+            } else {
+                jo.put("AssetId", asset.getId());
+                jo.put("AssetName", asset.getName());
+                jo.put("AssetDescription", asset.getDescription());
+                jo.put("AssetVersion", asset.getVersion());
+                jo.put("AssetContentType", asset.getContentType());
+                jo.put("AssetProperties", asset.getProperties());
+            }
+        }
+
+        jo.put("ContractAgreementId", contractAgreement.getId());
+        jo.put("ContractProviderId", contractAgreement.getProviderId());
+        jo.put("ContractConsumerId", contractAgreement.getConsumerId());
+        jo.put("ContractSigningDate", contractAgreement.getContractSigningDate());
+        jo.put("ContractPolicy", contractAgreement.getPolicy());
 
         var message = LoggingHouseMessage.Builder.newInstance()
                 .eventType(contractAgreement.getClass().getSimpleName())
                 .eventId(contractAgreement.getId())
-                .eventToLog(eventPayload)
+                .eventToLog(jo.toString())
                 .createProcess(true)
                 .processId(contractAgreement.getId())
                 .consumerId(contractAgreement.getConsumerId())
@@ -115,15 +144,27 @@ public class LoggingHouseEventSubscriber implements EventSubscriber {
         loggingHouseMessageStore.save(message);
     }
 
-    public void storeTransferProcess(TransferProcess transferProcess) throws JsonProcessingException {
+    public void storeTransferProcess(TransferProcess transferProcess) {
+        assert transferProcess != null;
+
         monitor.info("Storing TransferProcess to send to LoggingHouse");
 
-        var eventPayload = objectMapper.writeValueAsString(transferProcess);
+        var jo = new JSONObject();
+
+        jo.put("Timestamp", CalendarUtil.gregorianNow().toString());
+        jo.put("ConnectorId", connectorId);
+
+        jo.put("TransferProcessId", transferProcess.getId());
+        jo.put("TransferState", transferProcess.stateAsString());
+        jo.put("TransferProtocol", transferProcess.getProtocol());
+        jo.put("TransferContractId", transferProcess.getContractId());
+        jo.put("TransferConnectorId", transferProcess.getConnectorId());
+        jo.put("TransferAssetId", transferProcess.getAssetId());
 
         var message = LoggingHouseMessage.Builder.newInstance()
                 .eventType(transferProcess.getClass().getSimpleName())
                 .eventId(transferProcess.getId())
-                .eventToLog(eventPayload)
+                .eventToLog(jo.toString())
                 .createProcess(false)
                 .processId(transferProcess.getContractId())
                 .status(LoggingHouseMessageStatus.PENDING)
