@@ -28,6 +28,7 @@ public class LoggingHouseMessage {
     private String providerId;
     private LoggingHouseMessageStatus status;
     private ZonedDateTime createdAt;
+    private int retries;
 
     public Long getId() {
         return id;
@@ -58,6 +59,9 @@ public class LoggingHouseMessage {
     }
     public ZonedDateTime getCreatedAt() {
         return createdAt;
+    }
+    public int getRetries() {
+        return retries;
     }
 
     public static final class Builder {
@@ -110,12 +114,15 @@ public class LoggingHouseMessage {
             this.event.createdAt = createdAt;
             return this;
         }
+        public LoggingHouseMessage.Builder retries(int retries) {
+            this.event.retries = retries;
+            return this;
+        }
 
         public LoggingHouseMessage build() {
             Objects.requireNonNull(this.event.eventType, "Message eventType must not be null");
             Objects.requireNonNull(this.event.eventId, "Message eventId must not be null");
             Objects.requireNonNull(this.event.eventToLog, "Message eventToLog must not be null");
-            Objects.requireNonNull(this.event.createProcess, "Message createProcess must not be null");
             Objects.requireNonNull(this.event.processId, "Message processId must not be null");
             Objects.requireNonNull(this.event.status, "Message status must not be null");
             Objects.requireNonNull(this.event.createdAt, "Message createdAt must not be null");

@@ -56,8 +56,8 @@ public class SqlLoggingHouseMessageStore extends AbstractSqlStore implements Log
         Objects.requireNonNull(event.getEventType());
         Objects.requireNonNull(event.getEventId());
         Objects.requireNonNull(event.getEventToLog());
-        Objects.requireNonNull(event.getCreateProcess());
         Objects.requireNonNull(event.getProcessId());
+        Objects.requireNonNull(event.getStatus());
         Objects.requireNonNull(event.getCreatedAt());
 
         transactionContext.execute(() -> {
@@ -70,9 +70,9 @@ public class SqlLoggingHouseMessageStore extends AbstractSqlStore implements Log
                         event.getProcessId(),
                         event.getConsumerId(),
                         event.getProviderId(),
+                        event.getStatus().getCode(),
                         mapFromZonedDateTime(event.getCreatedAt())
                 );
-
             } catch (Exception e) {
                 throw new EdcPersistenceException("Error executing INSERT statement", e);
             }
@@ -84,7 +84,8 @@ public class SqlLoggingHouseMessageStore extends AbstractSqlStore implements Log
         return transactionContext.execute(() -> {
             try {
                 return queryExecutor.query(getConnection(), true, this::mapResultSet,
-                                statements.getSelectPendingStatement())
+                                statements.getSelectPendingStatement(),
+                                LoggingHouseMessageStatus.PENDING.getCode())
                         .collect(Collectors.toList());
             } catch (SQLException e) {
                 throw new EdcPersistenceException("Error executing SELECT statement", e);
@@ -98,8 +99,36 @@ public class SqlLoggingHouseMessageStore extends AbstractSqlStore implements Log
             try {
                 queryExecutor.execute(getConnection(),
                         statements.getUpdateSentTemplate(),
+                        LoggingHouseMessageStatus.SENT.getCode(),
                         receipt,
                         mapFromZonedDateTime(ZonedDateTime.now()),
+                        id);
+            } catch (SQLException e) {
+                throw new EdcPersistenceException("Error executing UPDATE statement", e);
+            }
+        });
+    }
+
+    @Override
+    public void updateRetry(long id) {
+        transactionContext.execute(() -> {
+            try {
+                queryExecutor.execute(getConnection(),
+                        statements.getUpdateRetryTemplate(),
+                        id);
+            } catch (SQLException e) {
+                throw new EdcPersistenceException("Error executing UPDATE statement", e);
+            }
+        });
+    }
+
+    @Override
+    public void updateFailed(long id) {
+        transactionContext.execute(() -> {
+            try {
+                queryExecutor.execute(getConnection(),
+                        statements.getUpdateFailedTemplate(),
+                        LoggingHouseMessageStatus.FAILED.getCode(),
                         id);
             } catch (SQLException e) {
                 throw new EdcPersistenceException("Error executing UPDATE statement", e);
@@ -118,12 +147,7 @@ public class SqlLoggingHouseMessageStore extends AbstractSqlStore implements Log
     }
 
     private LoggingHouseMessage mapResultSet(ResultSet resultSet) throws Exception {
-        LoggingHouseMessageStatus status;
-        if (resultSet.getString(statements.getReceiptColumn()) == null) {
-            status = LoggingHouseMessageStatus.PENDING;
-        } else {
-            status = LoggingHouseMessageStatus.SENT;
-        }
+        var status = LoggingHouseMessageStatus.codeOf(resultSet.getString(statements.getStatusColumn()));
 
         return LoggingHouseMessage.Builder.newInstance()
                 .id(resultSet.getLong(statements.getIdColumn()))
@@ -136,6 +160,7 @@ public class SqlLoggingHouseMessageStore extends AbstractSqlStore implements Log
                 .providerId(resultSet.getString(statements.getProviderIdColumn()))
                 .status(status)
                 .createdAt(mapToZonedDateTime(resultSet, statements.getCreatedAtColumn()))
+                .retries(resultSet.getInt(statements.getRetriesColumn()))
                 .build();
     }
 }

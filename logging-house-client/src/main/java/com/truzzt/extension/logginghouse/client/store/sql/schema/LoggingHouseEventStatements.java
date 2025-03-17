@@ -55,8 +55,16 @@ public interface LoggingHouseEventStatements {
         return "provider_id";
     }
 
+    default String getStatusColumn() {
+        return "status";
+    }
+
     default String getCreatedAtColumn() {
         return "created_at";
+    }
+
+    default String getRetriesColumn() {
+        return "retries";
     }
 
     default String getSentAtColumn() {
@@ -72,6 +80,10 @@ public interface LoggingHouseEventStatements {
     String getSelectPendingStatement();
 
     String getUpdateSentTemplate();
+
+    String getUpdateRetryTemplate();
+
+    String getUpdateFailedTemplate();
 
     default String getFormatAsJsonOperator() {
         return PostgresDialect.getJsonCastOperator();

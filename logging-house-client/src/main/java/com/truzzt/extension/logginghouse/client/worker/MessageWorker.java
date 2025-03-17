@@ -38,15 +38,17 @@ public class MessageWorker {
     private final URI connectorBaseUrl;
     private final URL loggingHouseUrl;
     private final LoggingHouseMessageStore store;
+    private final int retryLimit;
     private final String workerId;
 
     public MessageWorker(Monitor monitor, RemoteMessageDispatcherRegistry dispatcherRegistry, URI connectorBaseUrl, URL loggingHouseUrl,
-                         LoggingHouseMessageStore store) {
+                         LoggingHouseMessageStore store,  int retryLimit) {
         this.monitor = monitor;
         this.dispatcherRegistry = dispatcherRegistry;
         this.connectorBaseUrl = connectorBaseUrl;
         this.loggingHouseUrl = loggingHouseUrl;
         this.store = store;
+        this.retryLimit = retryLimit;
 
         workerId = "Worker-" + UUID.randomUUID();
     }
@@ -79,20 +81,36 @@ public class MessageWorker {
                     createProcess(message, extendedProcessUrl).join();
                 } catch (Exception e) {
                     monitor.warning("CreateProcess returned error (ignore it when the process already exists): " + e.getMessage());
-                    //throw new EdcException("Could not create process in LoggingHouse", e);
                 }
             }
 
             // Log Message
             var extendedLogUrl = new URL(loggingHouseUrl + "/messages/log/" + pid);
             try {
+                if (message.getRetries() >= retryLimit) {
+                    monitor.info("Message with id " + message.getEventId() + " reached retry limit " + retryLimit + ", will be marked as failed");
+                    store.updateFailed(message.getId());
+                    return;
+                }
+
                 var response = logMessage(message, extendedLogUrl).join();
                 response.onSuccess(msg -> {
                     monitor.info("Received receipt successfully from LoggingHouse for message with id " + message.getEventId());
                     store.updateSent(message.getId(), msg.data());
                 });
+
             } catch (Exception e) {
-                throw new EdcException("Could not log message to LoggingHouse", e);
+                monitor.severe("Could not log message to LoggingHouse", e);
+
+                var nextRetry = message.getRetries() + 1;
+                if (nextRetry < retryLimit) {
+                    var remainingRetries = retryLimit - nextRetry;
+                    monitor.info("Message with id " + message.getEventId() + " will be retried " + remainingRetries + " times");
+                    store.updateRetry(message.getId());
+                } else {
+                    monitor.info("Message with id " + message.getEventId() + " reached retry limit " + retryLimit + ", will be marked as failed");
+                    store.updateFailed(message.getId());
+                }
             }
         } catch (MalformedURLException e) {
             throw new EdcException("Could not create extended clearinghouse url.");

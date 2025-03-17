@@ -40,6 +40,7 @@ public class LoggingHouseWorkersManager {
     private final WorkersExecutor executor;
     private final Monitor monitor;
     private final int maxWorkers;
+    private final int retriesLimit;
     private final LoggingHouseMessageStore store;
     private final RemoteMessageDispatcherRegistry dispatcherRegistry;
     private final URI connectorBaseUrl;
@@ -48,6 +49,7 @@ public class LoggingHouseWorkersManager {
     public LoggingHouseWorkersManager(WorkersExecutor executor,
                                       Monitor monitor,
                                       int maxWorkers,
+                                      int retriesLimit,
                                       LoggingHouseMessageStore store,
                                       RemoteMessageDispatcherRegistry dispatcherRegistry,
                                       Hostname hostname,
@@ -55,6 +57,7 @@ public class LoggingHouseWorkersManager {
         this.executor = executor;
         this.monitor = monitor;
         this.maxWorkers = maxWorkers;
+        this.retriesLimit = retriesLimit;
         this.store = store;
         this.dispatcherRegistry = dispatcherRegistry;
         this.loggingHouseUrl = loggingHouseUrl;
@@ -83,7 +86,7 @@ public class LoggingHouseWorkersManager {
 
         var actualNumWorkers = Math.min(allItems.size(), maxWorkers);
         monitor.debug(format(log("Worker parallelism is %s, based on config and number of not sent messages"), actualNumWorkers));
-        var availableWorkers = createWorkers(actualNumWorkers);
+        var availableWorkers = createWorkers(actualNumWorkers, retriesLimit);
 
         while (!allItems.isEmpty()) {
             var worker = nextAvailableWorker(availableWorkers);
@@ -133,10 +136,10 @@ public class LoggingHouseWorkersManager {
     }
 
     @NotNull
-    private ArrayBlockingQueue<MessageWorker> createWorkers(int numWorkers) {
+    private ArrayBlockingQueue<MessageWorker> createWorkers(int numWorkers, int retriesLimit) {
 
         return new ArrayBlockingQueue<>(numWorkers, true, IntStream.range(0, numWorkers)
-                .mapToObj(i -> new MessageWorker(monitor, dispatcherRegistry, connectorBaseUrl, loggingHouseUrl, store))
+                .mapToObj(i -> new MessageWorker(monitor, dispatcherRegistry, connectorBaseUrl, loggingHouseUrl, store, retriesLimit))
                 .collect(Collectors.toList()));
     }
 

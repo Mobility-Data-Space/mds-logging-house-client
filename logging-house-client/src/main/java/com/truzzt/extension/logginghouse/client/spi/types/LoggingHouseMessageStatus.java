@@ -3,7 +3,7 @@ package com.truzzt.extension.logginghouse.client.spi.types;
 import org.eclipse.edc.spi.EdcException;
 
 public enum LoggingHouseMessageStatus {
-    PENDING("P"), SENT("S");
+    PENDING("P"), SENT("S"), FAILED("F");
 
     private final String code;
 
@@ -16,13 +16,11 @@ public enum LoggingHouseMessageStatus {
     }
 
     public static LoggingHouseMessageStatus codeOf(String code) {
-        switch(code) {
-            case "P":
-                return PENDING;
-            case "S":
-                return SENT;
-            default:
-                throw new EdcException("Invalid status code " + code);
-        }
+        return switch (code) {
+            case "P" -> PENDING;
+            case "S" -> SENT;
+            case "F" -> FAILED;
+            default -> throw new EdcException("Invalid status code " + code);
+        };
     }
 }

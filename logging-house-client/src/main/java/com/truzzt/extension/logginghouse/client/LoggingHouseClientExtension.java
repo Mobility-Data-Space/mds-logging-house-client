@@ -14,7 +14,6 @@
 
 package com.truzzt.extension.logginghouse.client;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.truzzt.extension.logginghouse.client.events.ConnectorAvailableEvent;
 import com.truzzt.extension.logginghouse.client.events.CustomLoggingHouseEvent;
 import com.truzzt.extension.logginghouse.client.events.LoggingHouseEventSubscriber;
@@ -39,12 +38,7 @@ import org.eclipse.edc.connector.contract.spi.event.contractnegotiation.Contract
 import org.eclipse.edc.connector.contract.spi.event.contractnegotiation.ContractNegotiationTerminated;
 import org.eclipse.edc.connector.contract.spi.event.contractnegotiation.ContractNegotiationVerified;
 import org.eclipse.edc.connector.contract.spi.negotiation.store.ContractNegotiationStore;
-import org.eclipse.edc.connector.transfer.spi.event.TransferProcessCompleted;
-import org.eclipse.edc.connector.transfer.spi.event.TransferProcessFailed;
-import org.eclipse.edc.connector.transfer.spi.event.TransferProcessInitiated;
-import org.eclipse.edc.connector.transfer.spi.event.TransferProcessRequested;
-import org.eclipse.edc.connector.transfer.spi.event.TransferProcessStarted;
-import org.eclipse.edc.connector.transfer.spi.event.TransferProcessTerminated;
+import org.eclipse.edc.connector.transfer.spi.event.*;
 import org.eclipse.edc.connector.transfer.spi.store.TransferProcessStore;
 import org.eclipse.edc.runtime.metamodel.annotation.Extension;
 import org.eclipse.edc.runtime.metamodel.annotation.Inject;
@@ -71,13 +65,7 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.UUID;
 
-import static com.truzzt.extension.logginghouse.client.ConfigConstants.LOGGINGHOUSE_ENABLED_SETTING;
-import static com.truzzt.extension.logginghouse.client.ConfigConstants.LOGGINGHOUSE_EXTENSION_MAX_WORKERS;
-import static com.truzzt.extension.logginghouse.client.ConfigConstants.LOGGINGHOUSE_EXTENSION_WORKERS_DELAY;
-import static com.truzzt.extension.logginghouse.client.ConfigConstants.LOGGINGHOUSE_EXTENSION_WORKERS_PERIOD;
-import static com.truzzt.extension.logginghouse.client.ConfigConstants.LOGGINGHOUSE_FLYWAY_CLEAN_SETTING;
-import static com.truzzt.extension.logginghouse.client.ConfigConstants.LOGGINGHOUSE_FLYWAY_REPAIR_SETTING;
-import static com.truzzt.extension.logginghouse.client.ConfigConstants.LOGGINGHOUSE_URL_SETTING;
+import static com.truzzt.extension.logginghouse.client.ConfigConstants.*;
 
 @Extension(value = LoggingHouseClientExtension.NAME)
 @Requires(value = {
@@ -130,7 +118,6 @@ public class LoggingHouseClientExtension implements ServiceExtension {
     private TransferProcessStore transferProcessStore;
     @Inject
     private AssetIndex assetIndex;
-    private ObjectMapper objectMapper;
 
     public Monitor monitor;
     private boolean enabled;
@@ -147,16 +134,15 @@ public class LoggingHouseClientExtension implements ServiceExtension {
     public void initialize(ServiceExtensionContext context) {
         monitor = context.getMonitor();
 
-        objectMapper = new ObjectMapper();
-
         var extensionEnabled = context.getSetting(LOGGINGHOUSE_ENABLED_SETTING, true);
         if (!extensionEnabled) {
             enabled = false;
-            monitor.info("Logginghouse client extension is disabled.");
+            monitor.info("LoggingHouseClientExtension is disabled.");
             return;
+        } else {
+            enabled = true;
+            monitor.info("LoggingHouseClientExtension is enabled.");
         }
-        enabled = true;
-        monitor.info("Logginghouse client extension is enabled.");
 
         loggingHouseLogUrl = readUrlFromSettings(context);
 
@@ -264,9 +250,13 @@ public class LoggingHouseClientExtension implements ServiceExtension {
         var initialDelaySeconds = context.getSetting(LOGGINGHOUSE_EXTENSION_WORKERS_PERIOD, 10);
         var executor = new WorkersExecutor(Duration.ofSeconds(periodSeconds), Duration.ofSeconds(initialDelaySeconds), monitor);
 
+        var maxWorkers = context.getSetting(LOGGINGHOUSE_EXTENSION_MAX_WORKERS, 1);
+        var retriesLimit = context.getSetting(LOGGINGHOUSE_RETRY_LIMIT_SETTING, 10);
+
         return new LoggingHouseWorkersManager(executor,
                 monitor,
-                context.getSetting(LOGGINGHOUSE_EXTENSION_MAX_WORKERS, 1),
+                maxWorkers,
+                retriesLimit,
                 store,
                 dispatcherRegistry,
                 hostname,
