@@ -34,6 +34,7 @@ import org.eclipse.edc.spi.http.EdcHttpClient;
 import org.eclipse.edc.spi.iam.IdentityService;
 import org.eclipse.edc.spi.iam.TokenParameters;
 import org.eclipse.edc.spi.monitor.Monitor;
+import org.eclipse.edc.spi.response.ResponseStatus;
 import org.eclipse.edc.spi.response.StatusResult;
 import org.eclipse.edc.spi.result.Result;
 import org.eclipse.edc.spi.types.domain.message.RemoteMessage;
@@ -43,6 +44,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.http.HttpHeaders;
+import java.text.ParseException;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
@@ -147,25 +149,24 @@ public class IdsMultipartSender {
                 .post(multipartRequestBody)
                 .build();
 
-        return httpClient.executeAsync(httpRequest, r -> {
-            monitor.debug("Response received from connector. Status " + r.code());
-            if (r.isSuccessful()) {
-                try (var body = r.body()) {
-                    if (body == null) {
+        return httpClient.executeAsync(httpRequest, response -> {
+            monitor.debug("HTTP response code received from connector: " + response.code());
+
+            if (response.isSuccessful()) {
+                try (var body = response.body()) {
+                    if (body == null)
                         throw new EdcException("Received an empty body response from connector");
-                    } else {
-                        var parts = extractResponseParts(body);
-                        var response = senderDelegate.getResponseContent(parts);
 
-                        checkResponseType(response, senderDelegate);
+                    var parts = extractResponseParts(body);
+                    var content = senderDelegate.getResponseContent(parts);
+                    checkResponseType(content, senderDelegate);
+                    return StatusResult.success(content.payload());
 
-                        return StatusResult.success(response.payload());
-                    }
                 } catch (Exception e) {
-                    throw new RuntimeException(e);
+                    throw new EdcException("Error reading response", e);
                 }
             } else {
-                throw new EdcException(format("Received an error from connector (%s): %s %s", requestUrl, r.code(), r.message()));
+                return StatusResult.failure(ResponseStatus.FATAL_ERROR, String.valueOf(response.code()));
             }
         });
     }
@@ -183,7 +184,7 @@ public class IdsMultipartSender {
                 );
     }
 
-    protected IdsMultipartParts extractResponseParts(ResponseBody body) throws Exception {
+    protected IdsMultipartParts extractResponseParts(ResponseBody body) throws IOException, ParseException {
         InputStream header = null;
         InputStream payload = null;
         try (var multipartReader = new MultipartReader(Objects.requireNonNull(body))) {
