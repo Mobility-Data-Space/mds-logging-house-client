@@ -21,7 +21,7 @@ public class BaseSqlDialectStatements implements LoggingHouseEventStatements {
 
     @Override
     public String getInsertTemplate() {
-        return format("INSERT INTO %s (%s, %s, %s, %s, %s, %s, %s, %s) VALUES (?, ?, ?%s, ?, ?, ?, ?, ?)",
+        return format("INSERT INTO %s (%s, %s, %s, %s, %s, %s, %s, %s, %s) VALUES (?, ?, ?%s, ?, ?, ?, ?, ?, ?)",
                 getLoggingHouseMessageTable(),
                 getEventTypeColumn(),
                 getEventIdColumn(),
@@ -30,6 +30,7 @@ public class BaseSqlDialectStatements implements LoggingHouseEventStatements {
                 getProcessIdColumn(),
                 getConsumerIdColumn(),
                 getProviderIdColumn(),
+                getStatusColumn(),
                 getCreatedAtColumn(),
                 getFormatAsJsonOperator()
         );
@@ -37,17 +38,39 @@ public class BaseSqlDialectStatements implements LoggingHouseEventStatements {
 
     @Override
     public String getSelectPendingStatement() {
-        return format("SELECT * FROM %s WHERE %s IS NULL",
+        return format("SELECT * FROM %s WHERE %s = ? ORDER BY %s asc, %s asc",
                 getLoggingHouseMessageTable(),
-                getReceiptColumn());
+                getStatusColumn(),
+                getCreatedAtColumn(),
+                getIdColumn());
     }
 
     @Override
     public String getUpdateSentTemplate() {
-        return format("UPDATE %s SET %s = ?, %s = ? WHERE %s = ?",
+        return format("UPDATE %s SET %s = ?, %s = ?, %s = ? WHERE %s = ?",
                 getLoggingHouseMessageTable(),
+                getStatusColumn(),
                 getReceiptColumn(),
                 getSentAtColumn(),
+                getIdColumn());
+    }
+
+    @Override
+    public String getUpdateRetryTemplate() {
+        return format("UPDATE %s SET %s = %s + 1 WHERE %s = ?",
+                getLoggingHouseMessageTable(),
+                getRetriesColumn(),
+                getRetriesColumn(),
+                getIdColumn());
+    }
+
+    @Override
+    public String getUpdateFailedTemplate() {
+        return format("UPDATE %s SET %s = %s + 1, %s = ? WHERE %s = ?",
+                getLoggingHouseMessageTable(),
+                getRetriesColumn(),
+                getRetriesColumn(),
+                getStatusColumn(),
                 getIdColumn());
     }
 }

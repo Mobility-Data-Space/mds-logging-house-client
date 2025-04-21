@@ -28,6 +28,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -39,6 +40,7 @@ public class LoggingHouseWorkersManager {
     private final WorkersExecutor executor;
     private final Monitor monitor;
     private final int maxWorkers;
+    private final int retriesLimit;
     private final LoggingHouseMessageStore store;
     private final RemoteMessageDispatcherRegistry dispatcherRegistry;
     private final URI connectorBaseUrl;
@@ -47,6 +49,7 @@ public class LoggingHouseWorkersManager {
     public LoggingHouseWorkersManager(WorkersExecutor executor,
                                       Monitor monitor,
                                       int maxWorkers,
+                                      int retriesLimit,
                                       LoggingHouseMessageStore store,
                                       RemoteMessageDispatcherRegistry dispatcherRegistry,
                                       Hostname hostname,
@@ -54,6 +57,7 @@ public class LoggingHouseWorkersManager {
         this.executor = executor;
         this.monitor = monitor;
         this.maxWorkers = maxWorkers;
+        this.retriesLimit = retriesLimit;
         this.store = store;
         this.dispatcherRegistry = dispatcherRegistry;
         this.loggingHouseUrl = loggingHouseUrl;
@@ -66,10 +70,7 @@ public class LoggingHouseWorkersManager {
     }
 
     public void execute() {
-        executor.run(() -> {
-            processPending();
-        });
-
+        executor.run(this::processPending);
     }
 
     private void processPending() {
@@ -85,7 +86,7 @@ public class LoggingHouseWorkersManager {
 
         var actualNumWorkers = Math.min(allItems.size(), maxWorkers);
         monitor.debug(format(log("Worker parallelism is %s, based on config and number of not sent messages"), actualNumWorkers));
-        var availableWorkers = createWorkers(actualNumWorkers);
+        var availableWorkers = createWorkers(actualNumWorkers, retriesLimit);
 
         while (!allItems.isEmpty()) {
             var worker = nextAvailableWorker(availableWorkers);
@@ -94,21 +95,31 @@ public class LoggingHouseWorkersManager {
                 continue;
             }
 
-            var item = allItems.poll();
+            var item = allItems.peek();
             if (item == null) {
                 monitor.warning(log("WorkItem queue empty, abort execution"));
                 break;
             }
 
-            worker.run(item)
+            CompletableFuture<Boolean> taskFuture = worker.run(item)
                     .whenComplete((updateResponse, throwable) -> {
                         if (throwable != null) {
                             monitor.severe(log(format("Unexpected exception happened during in worker %s", worker.getId())), throwable);
                         } else {
                             monitor.info(log(format("Worker [%s] is done", worker.getId())));
+                            // Remove item only when processed successfully
+                            allItems.poll();
                         }
+                        // re-add worker for the next message
                         availableWorkers.add(worker);
                     });
+
+            // Wait for completion before processing next item
+            try {
+                taskFuture.get();
+            } catch (Exception e) {
+                monitor.severe(log("Unexpected exception happened during in worker"), e);
+            }
         }
     }
 
@@ -125,14 +136,14 @@ public class LoggingHouseWorkersManager {
     }
 
     @NotNull
-    private ArrayBlockingQueue<MessageWorker> createWorkers(int numWorkers) {
+    private ArrayBlockingQueue<MessageWorker> createWorkers(int numWorkers, int retriesLimit) {
 
         return new ArrayBlockingQueue<>(numWorkers, true, IntStream.range(0, numWorkers)
-                .mapToObj(i -> new MessageWorker(monitor, dispatcherRegistry, connectorBaseUrl, loggingHouseUrl, store))
+                .mapToObj(i -> new MessageWorker(monitor, dispatcherRegistry, connectorBaseUrl, loggingHouseUrl, store, retriesLimit))
                 .collect(Collectors.toList()));
     }
 
-    private String log(String input) {
+    private static String log(String input) {
         return "LoggingHouseWorkersManager: " + input;
     }
 

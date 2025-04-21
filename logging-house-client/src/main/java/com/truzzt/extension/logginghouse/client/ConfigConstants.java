@@ -20,6 +20,8 @@ public class ConfigConstants {
 
     static final String LOGGINGHOUSE_URL_SETTING = "edc.logginghouse.extension.url";
 
+    static final String LOGGINGHOUSE_RETRY_LIMIT_SETTING = "edc.logginghouse.extension.retryLimit";
+
     static final String LOGGINGHOUSE_FLYWAY_REPAIR_SETTING = "edc.logginghouse.extension.flyway.repair";
 
     static final String LOGGINGHOUSE_FLYWAY_CLEAN_SETTING = "edc.logginghouse.extension.flyway.clean";

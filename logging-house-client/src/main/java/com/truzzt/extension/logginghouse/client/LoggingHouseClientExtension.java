@@ -14,6 +14,8 @@
 
 package com.truzzt.extension.logginghouse.client;
 
+import com.truzzt.extension.logginghouse.client.events.ConnectorAvailableEvent;
+import com.truzzt.extension.logginghouse.client.events.CustomLoggingHouseEvent;
 import com.truzzt.extension.logginghouse.client.events.LoggingHouseEventSubscriber;
 import com.truzzt.extension.logginghouse.client.events.messages.CreateProcessMessageSender;
 import com.truzzt.extension.logginghouse.client.events.messages.LogMessageSender;
@@ -31,20 +33,19 @@ import com.truzzt.extension.logginghouse.client.worker.LoggingHouseWorkersManage
 import com.truzzt.extension.logginghouse.client.worker.WorkersExecutor;
 import de.fraunhofer.iais.eis.LogMessage;
 import de.fraunhofer.iais.eis.RequestMessage;
+import org.eclipse.edc.connector.contract.spi.event.contractnegotiation.ContractNegotiationAgreed;
 import org.eclipse.edc.connector.contract.spi.event.contractnegotiation.ContractNegotiationFinalized;
+import org.eclipse.edc.connector.contract.spi.event.contractnegotiation.ContractNegotiationTerminated;
+import org.eclipse.edc.connector.contract.spi.event.contractnegotiation.ContractNegotiationVerified;
 import org.eclipse.edc.connector.contract.spi.negotiation.store.ContractNegotiationStore;
-import org.eclipse.edc.connector.transfer.spi.event.TransferProcessCompleted;
-import org.eclipse.edc.connector.transfer.spi.event.TransferProcessFailed;
-import org.eclipse.edc.connector.transfer.spi.event.TransferProcessInitiated;
-import org.eclipse.edc.connector.transfer.spi.event.TransferProcessRequested;
-import org.eclipse.edc.connector.transfer.spi.event.TransferProcessStarted;
-import org.eclipse.edc.connector.transfer.spi.event.TransferProcessTerminated;
+import org.eclipse.edc.connector.transfer.spi.event.*;
 import org.eclipse.edc.connector.transfer.spi.store.TransferProcessStore;
 import org.eclipse.edc.runtime.metamodel.annotation.Extension;
 import org.eclipse.edc.runtime.metamodel.annotation.Inject;
 import org.eclipse.edc.runtime.metamodel.annotation.Requires;
 import org.eclipse.edc.spi.EdcException;
 import org.eclipse.edc.spi.asset.AssetIndex;
+import org.eclipse.edc.spi.event.EventEnvelope;
 import org.eclipse.edc.spi.event.EventRouter;
 import org.eclipse.edc.spi.http.EdcHttpClient;
 import org.eclipse.edc.spi.iam.IdentityService;
@@ -62,14 +63,9 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.Duration;
 import java.util.Map;
+import java.util.UUID;
 
-import static com.truzzt.extension.logginghouse.client.ConfigConstants.LOGGINGHOUSE_ENABLED_SETTING;
-import static com.truzzt.extension.logginghouse.client.ConfigConstants.LOGGINGHOUSE_EXTENSION_MAX_WORKERS;
-import static com.truzzt.extension.logginghouse.client.ConfigConstants.LOGGINGHOUSE_EXTENSION_WORKERS_DELAY;
-import static com.truzzt.extension.logginghouse.client.ConfigConstants.LOGGINGHOUSE_EXTENSION_WORKERS_PERIOD;
-import static com.truzzt.extension.logginghouse.client.ConfigConstants.LOGGINGHOUSE_FLYWAY_CLEAN_SETTING;
-import static com.truzzt.extension.logginghouse.client.ConfigConstants.LOGGINGHOUSE_FLYWAY_REPAIR_SETTING;
-import static com.truzzt.extension.logginghouse.client.ConfigConstants.LOGGINGHOUSE_URL_SETTING;
+import static com.truzzt.extension.logginghouse.client.ConfigConstants.*;
 
 @Extension(value = LoggingHouseClientExtension.NAME)
 @Requires(value = {
@@ -127,6 +123,7 @@ public class LoggingHouseClientExtension implements ServiceExtension {
     private boolean enabled;
     private URL loggingHouseLogUrl;
     private LoggingHouseWorkersManager workersManager;
+    private String connectorId;
 
     @Override
     public String name() {
@@ -140,11 +137,12 @@ public class LoggingHouseClientExtension implements ServiceExtension {
         var extensionEnabled = context.getSetting(LOGGINGHOUSE_ENABLED_SETTING, true);
         if (!extensionEnabled) {
             enabled = false;
-            monitor.info("Logginghouse client extension is disabled.");
+            monitor.info("LoggingHouseClientExtension is disabled.");
             return;
+        } else {
+            enabled = true;
+            monitor.info("LoggingHouseClientExtension is enabled.");
         }
-        enabled = true;
-        monitor.info("Logginghouse client extension is enabled.");
 
         loggingHouseLogUrl = readUrlFromSettings(context);
 
@@ -157,6 +155,8 @@ public class LoggingHouseClientExtension implements ServiceExtension {
 
         registerDispatcher(context);
         workersManager = initializeWorkersManager(context, store);
+
+        connectorId = context.getConnectorId();
     }
 
     private URL readUrlFromSettings(ServiceExtensionContext context) {
@@ -202,9 +202,14 @@ public class LoggingHouseClientExtension implements ServiceExtension {
                 loggingHouseMessageStore,
                 contractNegotiationStore,
                 transferProcessStore,
+                context.getConnectorId(),
+                assetIndex,
                 monitor);
 
+        eventRouter.registerSync(ContractNegotiationAgreed.class, eventSubscriber);
+        eventRouter.registerSync(ContractNegotiationVerified.class, eventSubscriber);
         eventRouter.registerSync(ContractNegotiationFinalized.class, eventSubscriber);
+        eventRouter.registerSync(ContractNegotiationTerminated.class, eventSubscriber);
 
         eventRouter.registerSync(TransferProcessRequested.class, eventSubscriber);
         eventRouter.registerSync(TransferProcessInitiated.class, eventSubscriber);
@@ -212,6 +217,9 @@ public class LoggingHouseClientExtension implements ServiceExtension {
         eventRouter.registerSync(TransferProcessCompleted.class, eventSubscriber);
         eventRouter.registerSync(TransferProcessFailed.class, eventSubscriber);
         eventRouter.registerSync(TransferProcessTerminated.class, eventSubscriber);
+
+        eventRouter.registerSync(CustomLoggingHouseEvent.class, eventSubscriber);
+
         context.registerService(LoggingHouseEventSubscriber.class, eventSubscriber);
 
         monitor.debug("Registered event subscriber for LoggingHouseClientExtension");
@@ -242,9 +250,13 @@ public class LoggingHouseClientExtension implements ServiceExtension {
         var initialDelaySeconds = context.getSetting(LOGGINGHOUSE_EXTENSION_WORKERS_PERIOD, 10);
         var executor = new WorkersExecutor(Duration.ofSeconds(periodSeconds), Duration.ofSeconds(initialDelaySeconds), monitor);
 
+        var maxWorkers = context.getSetting(LOGGINGHOUSE_EXTENSION_MAX_WORKERS, 1);
+        var retriesLimit = context.getSetting(LOGGINGHOUSE_RETRY_LIMIT_SETTING, 10);
+
         return new LoggingHouseWorkersManager(executor,
                 monitor,
-                context.getSetting(LOGGINGHOUSE_EXTENSION_MAX_WORKERS, 1),
+                maxWorkers,
+                retriesLimit,
                 store,
                 dispatcherRegistry,
                 hostname,
@@ -258,7 +270,7 @@ public class LoggingHouseClientExtension implements ServiceExtension {
         var httpClient = context.getService(EdcHttpClient.class);
         var objectMapper = typeManager.getMapper(TYPE_MANAGER_SERIALIZER_KEY);
 
-        var logMessageSender = new LogMessageSender(monitor, assetIndex, context.getConnectorId());
+        var logMessageSender = new LogMessageSender(monitor);
         var createProcessMessageSender = new CreateProcessMessageSender();
 
         var idsMultipartSender = new IdsMultipartSender(monitor, httpClient, identityService, objectMapper);
@@ -276,6 +288,22 @@ public class LoggingHouseClientExtension implements ServiceExtension {
         } else {
             monitor.info("Starting Logginghouse client extension.");
             workersManager.execute();
+
+
+            // Sending a hello message to LoggingHouse
+            monitor.info("Sending Hello Message to LoggingHouse.");
+            var currentTime = System.currentTimeMillis();
+            ConnectorAvailableEvent connectorAvailableEvent = new ConnectorAvailableEvent(
+                    UUID.randomUUID().toString(),
+                    this.connectorId,
+                    "{\"message\": \"Hello Logginghouse\", \"connectorStartDate\": " + currentTime + "}"
+            );
+            var eventEnvelope = EventEnvelope.Builder.newInstance()
+                    .at(currentTime)
+                    .payload(connectorAvailableEvent)
+                    .build();
+            eventRouter.publish(eventEnvelope);
+            monitor.debug("'Hello Logginghouse' Event published.");
         }
     }
 

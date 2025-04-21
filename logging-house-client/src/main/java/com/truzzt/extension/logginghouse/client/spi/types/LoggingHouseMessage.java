@@ -19,26 +19,27 @@ import java.util.Objects;
 
 public class LoggingHouseMessage {
     private Long id;
-    private Class<?> eventType;
+    private String eventType;
     private String eventId;
-    private Object eventToLog;
+    private String eventToLog;
     private boolean createProcess;
     private String processId;
     private String consumerId;
     private String providerId;
     private LoggingHouseMessageStatus status;
     private ZonedDateTime createdAt;
+    private int retries;
 
     public Long getId() {
         return id;
     }
-    public Class getEventType() {
+    public String getEventType() {
         return eventType;
     }
     public String getEventId() {
         return eventId;
     }
-    public Object getEventToLog() {
+    public String getEventToLog() {
         return eventToLog;
     }
     public boolean getCreateProcess() {
@@ -59,6 +60,9 @@ public class LoggingHouseMessage {
     public ZonedDateTime getCreatedAt() {
         return createdAt;
     }
+    public int getRetries() {
+        return retries;
+    }
 
     public static final class Builder {
         private final LoggingHouseMessage event = new LoggingHouseMessage();
@@ -74,7 +78,7 @@ public class LoggingHouseMessage {
             this.event.id = id;
             return this;
         }
-        public LoggingHouseMessage.Builder eventType(Class eventType) {
+        public LoggingHouseMessage.Builder eventType(String eventType) {
             this.event.eventType = eventType;
             return this;
         }
@@ -82,7 +86,7 @@ public class LoggingHouseMessage {
             this.event.eventId = eventId;
             return this;
         }
-        public LoggingHouseMessage.Builder eventToLog(Object eventToLog) {
+        public LoggingHouseMessage.Builder eventToLog(String eventToLog) {
             this.event.eventToLog = eventToLog;
             return this;
         }
@@ -110,12 +114,15 @@ public class LoggingHouseMessage {
             this.event.createdAt = createdAt;
             return this;
         }
+        public LoggingHouseMessage.Builder retries(int retries) {
+            this.event.retries = retries;
+            return this;
+        }
 
         public LoggingHouseMessage build() {
             Objects.requireNonNull(this.event.eventType, "Message eventType must not be null");
             Objects.requireNonNull(this.event.eventId, "Message eventId must not be null");
             Objects.requireNonNull(this.event.eventToLog, "Message eventToLog must not be null");
-            Objects.requireNonNull(this.event.createProcess, "Message createProcess must not be null");
             Objects.requireNonNull(this.event.processId, "Message processId must not be null");
             Objects.requireNonNull(this.event.status, "Message status must not be null");
             Objects.requireNonNull(this.event.createdAt, "Message createdAt must not be null");

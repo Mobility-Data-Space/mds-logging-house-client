@@ -20,9 +20,6 @@ import com.truzzt.extension.logginghouse.client.spi.store.LoggingHouseMessageSto
 import com.truzzt.extension.logginghouse.client.spi.types.LoggingHouseMessage;
 import com.truzzt.extension.logginghouse.client.spi.types.LoggingHouseMessageStatus;
 import com.truzzt.extension.logginghouse.client.store.sql.schema.LoggingHouseEventStatements;
-import org.eclipse.edc.connector.contract.spi.types.agreement.ContractAgreement;
-import org.eclipse.edc.connector.transfer.spi.types.TransferProcess;
-import org.eclipse.edc.spi.EdcException;
 import org.eclipse.edc.spi.persistence.EdcPersistenceException;
 import org.eclipse.edc.sql.QueryExecutor;
 import org.eclipse.edc.sql.store.AbstractSqlStore;
@@ -59,23 +56,23 @@ public class SqlLoggingHouseMessageStore extends AbstractSqlStore implements Log
         Objects.requireNonNull(event.getEventType());
         Objects.requireNonNull(event.getEventId());
         Objects.requireNonNull(event.getEventToLog());
-        Objects.requireNonNull(event.getCreateProcess());
         Objects.requireNonNull(event.getProcessId());
+        Objects.requireNonNull(event.getStatus());
         Objects.requireNonNull(event.getCreatedAt());
 
         transactionContext.execute(() -> {
             try (var connection = getConnection()) {
                 queryExecutor.execute(connection, statements.getInsertTemplate(),
-                        event.getEventType().getSimpleName(),
+                        event.getEventType(),
                         event.getEventId(),
                         toJson(event.getEventToLog()),
                         event.getCreateProcess(),
                         event.getProcessId(),
                         event.getConsumerId(),
                         event.getProviderId(),
+                        event.getStatus().getCode(),
                         mapFromZonedDateTime(event.getCreatedAt())
                 );
-
             } catch (Exception e) {
                 throw new EdcPersistenceException("Error executing INSERT statement", e);
             }
@@ -87,7 +84,8 @@ public class SqlLoggingHouseMessageStore extends AbstractSqlStore implements Log
         return transactionContext.execute(() -> {
             try {
                 return queryExecutor.query(getConnection(), true, this::mapResultSet,
-                                statements.getSelectPendingStatement())
+                                statements.getSelectPendingStatement(),
+                                LoggingHouseMessageStatus.PENDING.getCode())
                         .collect(Collectors.toList());
             } catch (SQLException e) {
                 throw new EdcPersistenceException("Error executing SELECT statement", e);
@@ -101,8 +99,36 @@ public class SqlLoggingHouseMessageStore extends AbstractSqlStore implements Log
             try {
                 queryExecutor.execute(getConnection(),
                         statements.getUpdateSentTemplate(),
+                        LoggingHouseMessageStatus.SENT.getCode(),
                         receipt,
                         mapFromZonedDateTime(ZonedDateTime.now()),
+                        id);
+            } catch (SQLException e) {
+                throw new EdcPersistenceException("Error executing UPDATE statement", e);
+            }
+        });
+    }
+
+    @Override
+    public void updateRetry(long id) {
+        transactionContext.execute(() -> {
+            try {
+                queryExecutor.execute(getConnection(),
+                        statements.getUpdateRetryTemplate(),
+                        id);
+            } catch (SQLException e) {
+                throw new EdcPersistenceException("Error executing UPDATE statement", e);
+            }
+        });
+    }
+
+    @Override
+    public void updateFailed(long id) {
+        transactionContext.execute(() -> {
+            try {
+                queryExecutor.execute(getConnection(),
+                        statements.getUpdateFailedTemplate(),
+                        LoggingHouseMessageStatus.FAILED.getCode(),
                         id);
             } catch (SQLException e) {
                 throw new EdcPersistenceException("Error executing UPDATE statement", e);
@@ -121,42 +147,20 @@ public class SqlLoggingHouseMessageStore extends AbstractSqlStore implements Log
     }
 
     private LoggingHouseMessage mapResultSet(ResultSet resultSet) throws Exception {
-        Class eventType = toClass(resultSet.getString(statements.getEventTypeColumn()));
-
-        Object eventToLog;
-        try {
-            eventToLog = fromJson(resultSet.getString(statements.getEventToLogColumn()), eventType);
-        } catch (EdcPersistenceException e) {
-            throw new EdcPersistenceException("Error eventToLog JSON column", e);
-        }
-
-        LoggingHouseMessageStatus status;
-        if (resultSet.getString(statements.getReceiptColumn()) == null) {
-            status = LoggingHouseMessageStatus.PENDING;
-        } else {
-            status = LoggingHouseMessageStatus.SENT;
-        }
+        var status = LoggingHouseMessageStatus.codeOf(resultSet.getString(statements.getStatusColumn()));
 
         return LoggingHouseMessage.Builder.newInstance()
                 .id(resultSet.getLong(statements.getIdColumn()))
-                .eventType(eventType)
+                .eventType(resultSet.getString(statements.getEventTypeColumn()))
                 .eventId(resultSet.getString(statements.getEventIdColumn()))
-                .eventToLog(eventToLog)
+                .eventToLog(resultSet.getString(statements.getEventToLogColumn()))
                 .createProcess(resultSet.getBoolean(statements.getCreateProcessColumn()))
                 .processId(resultSet.getString(statements.getProcessIdColumn()))
                 .consumerId(resultSet.getString(statements.getConsumerIdColumn()))
                 .providerId(resultSet.getString(statements.getProviderIdColumn()))
                 .status(status)
                 .createdAt(mapToZonedDateTime(resultSet, statements.getCreatedAtColumn()))
+                .retries(resultSet.getInt(statements.getRetriesColumn()))
                 .build();
     }
-
-    private Class toClass(String eventType) {
-        return switch (eventType) {
-            case "ContractAgreement" -> ContractAgreement.class;
-            case "TransferProcess" -> TransferProcess.class;
-            default -> throw new EdcException("Invalid eventType: " + eventType);
-        };
-    }
-
 }
