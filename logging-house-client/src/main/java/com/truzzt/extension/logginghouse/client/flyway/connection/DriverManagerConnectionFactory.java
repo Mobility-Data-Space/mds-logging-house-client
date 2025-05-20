@@ -34,14 +34,20 @@ public class DriverManagerConnectionFactory implements ConnectionFactory {
     }
 
     @Override
-    public Connection create() {
+    public Connection create(String jdbcUrl, Properties properties) {
         try {
-            var properties = new Properties();
             properties.setProperty(CONNECTION_PROPERTY_USER, datasourceProperties.getUser());
             properties.setProperty(CONNECTION_PROPERTY_PASSWORD, datasourceProperties.getPassword());
             return DriverManager.getConnection(datasourceProperties.getJdbcUrl(), properties);
         } catch (SQLException e) {
             throw new EdcPersistenceException(e);
         }
+    }
+
+    public Properties getProperties() {
+        var properties = new Properties();
+        properties.setProperty(CONNECTION_PROPERTY_USER, datasourceProperties.getUser());
+        properties.setProperty(CONNECTION_PROPERTY_PASSWORD, datasourceProperties.getPassword());
+        return properties;
     }
 }

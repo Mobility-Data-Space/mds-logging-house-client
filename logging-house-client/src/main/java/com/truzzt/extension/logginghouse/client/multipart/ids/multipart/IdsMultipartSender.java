@@ -29,8 +29,8 @@ import okhttp3.MultipartReader;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.ResponseBody;
+import org.eclipse.edc.http.spi.EdcHttpClient;
 import org.eclipse.edc.spi.EdcException;
-import org.eclipse.edc.spi.http.EdcHttpClient;
 import org.eclipse.edc.spi.iam.IdentityService;
 import org.eclipse.edc.spi.iam.TokenParameters;
 import org.eclipse.edc.spi.monitor.Monitor;
@@ -46,6 +46,8 @@ import java.net.http.HttpHeaders;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
+import static com.truzzt.extension.logginghouse.client.multipart.ids.multipart.IdsConstants.AUDIENCE_CLAIM;
+import static com.truzzt.extension.logginghouse.client.multipart.ids.multipart.IdsConstants.SCOPE_CLAIM;
 import static java.lang.String.format;
 import static java.util.concurrent.CompletableFuture.failedFuture;
 
@@ -147,33 +149,36 @@ public class IdsMultipartSender {
                 .post(multipartRequestBody)
                 .build();
 
-        return httpClient.executeAsync(httpRequest, r -> {
-            monitor.debug("Response received from connector. Status " + r.code());
-            if (r.isSuccessful()) {
-                try (var body = r.body()) {
+        try (var response = httpClient.execute(httpRequest)) {
+            monitor.debug("Response received from connector. Status " + response.code());
+
+            if (response.isSuccessful()) {
+                try (var body = response.body()) {
                     if (body == null) {
                         throw new EdcException("Received an empty body response from connector");
                     } else {
                         var parts = extractResponseParts(body);
-                        var response = senderDelegate.getResponseContent(parts);
+                        var content = senderDelegate.getResponseContent(parts);
 
-                        checkResponseType(response, senderDelegate);
+                        checkResponseType(content, senderDelegate);
 
-                        return StatusResult.success(response.payload());
+                        return CompletableFuture.completedFuture(StatusResult.success(content.payload()));
                     }
                 } catch (Exception e) {
-                    throw new RuntimeException(e);
+                    throw new EdcException("Error reading response body", e);
                 }
             } else {
-                throw new EdcException(format("Received an error from connector (%s): %s %s", requestUrl, r.code(), r.message()));
+                throw new EdcException(format("Received an error from connector (%s): %s %s", requestUrl, response.code(), response.message()));
             }
-        });
+        } catch (IOException e) {
+            throw new EdcException("Error sending request to connector", e);
+        }
     }
 
     protected Result<DynamicAttributeToken> obtainDynamicAttributeToken(String recipientAddress) {
         var tokenParameters = TokenParameters.Builder.newInstance()
-                .scope(IdsConstants.TOKEN_SCOPE)
-                .audience(recipientAddress)
+                .claims(SCOPE_CLAIM, IdsConstants.TOKEN_SCOPE)
+                .claims(AUDIENCE_CLAIM, recipientAddress)
                 .build();
         return identityService.obtainClientCredentials(tokenParameters)
                 .map(credentials -> new DynamicAttributeTokenBuilder()

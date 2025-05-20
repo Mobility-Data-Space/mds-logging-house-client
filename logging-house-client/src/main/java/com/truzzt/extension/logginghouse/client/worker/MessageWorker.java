@@ -33,6 +33,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 public class MessageWorker {
+    private final String participantId;
     private final Monitor monitor;
     private final RemoteMessageDispatcherRegistry dispatcherRegistry;
     private final URI connectorBaseUrl;
@@ -40,8 +41,13 @@ public class MessageWorker {
     private final LoggingHouseMessageStore store;
     private final String workerId;
 
-    public MessageWorker(Monitor monitor, RemoteMessageDispatcherRegistry dispatcherRegistry, URI connectorBaseUrl, URL loggingHouseUrl,
+    public MessageWorker(String participantId,
+                         Monitor monitor,
+                         RemoteMessageDispatcherRegistry dispatcherRegistry,
+                         URI connectorBaseUrl,
+                         URL loggingHouseUrl,
                          LoggingHouseMessageStore store) {
+        this.participantId = participantId;
         this.monitor = monitor;
         this.dispatcherRegistry = dispatcherRegistry;
         this.connectorBaseUrl = connectorBaseUrl;
@@ -106,7 +112,7 @@ public class MessageWorker {
         processOwners.add(message.getProviderId());
 
         monitor.info("Creating process in LoggingHouse with id: " + message.getProcessId());
-        var logMessage = new CreateProcessMessage(loggingHouseUrl, connectorBaseUrl, message.getProcessId(), processOwners);
+        var logMessage = new CreateProcessMessage(participantId, loggingHouseUrl, connectorBaseUrl, message.getProcessId(), processOwners);
 
         return dispatcherRegistry.dispatch(Object.class, logMessage);
     }
@@ -114,7 +120,7 @@ public class MessageWorker {
     public CompletableFuture<StatusResult<LogMessageReceipt>> logMessage(LoggingHouseMessage message, URL clearingHouseLogUrl) {
 
         monitor.info("Logging message to LoggingHouse with type " + message.getEventType() + " and id " + message.getEventId());
-        var logMessage = new LogMessage(clearingHouseLogUrl, connectorBaseUrl, message.getEventToLog());
+        var logMessage = new LogMessage(participantId, clearingHouseLogUrl, connectorBaseUrl, message.getEventToLog());
 
         return dispatcherRegistry.dispatch(LogMessageReceipt.class, logMessage);
     }

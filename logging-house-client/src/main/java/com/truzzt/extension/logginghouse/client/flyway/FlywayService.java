@@ -25,8 +25,8 @@ import org.flywaydb.core.api.MigrationVersion;
 import org.flywaydb.core.api.output.MigrateResult;
 import org.flywaydb.core.api.output.RepairResult;
 
-import java.util.List;
 import javax.sql.DataSource;
+import java.util.List;
 
 public class FlywayService {
 
@@ -108,7 +108,7 @@ public class FlywayService {
 
     private DataSource getDataSource(DatasourceProperties datasourceProperties) {
         var connectionFactory = new DriverManagerConnectionFactory(datasourceProperties);
-        return new ConnectionFactoryDataSource(connectionFactory);
+        return new ConnectionFactoryDataSource(connectionFactory, datasourceProperties.getJdbcUrl(), connectionFactory.getProperties());
     }
 
     private void handleFlywayMigrationResult(MigrateResult migrateResult) {
