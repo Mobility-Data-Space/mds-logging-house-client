@@ -3,40 +3,29 @@ plugins {
     `maven-publish`
 }
 
-val edcVersion: String by project
-val edcGroup: String by project
-val jupiterVersion: String by project
-val mockitoVersion: String by project
-val assertj: String by project
-val okHttpVersion: String by project
-val jsonVersion: String by project
-
 dependencies {
-    implementation("${edcGroup}:control-plane-core:${edcVersion}")
-    implementation("${edcGroup}:http-spi:${edcVersion}")
-    implementation("${edcGroup}:sql-core:${edcVersion}")
-    implementation("${edcGroup}:transaction-datasource-spi:${edcVersion}")
+    implementation(libs.edc.control.plane.spi)
+    implementation(libs.edc.http.spi)
 
-    implementation("com.squareup.okhttp3:okhttp:${okHttpVersion}")
-    implementation("org.json:json:${jsonVersion}")
-    implementation("org.glassfish.jersey.media:jersey-media-multipart:3.1.3")
+    implementation(libs.edc.sql.core)
+    implementation(libs.edc.sql.lib)
+    implementation(libs.edc.transaction.datasource.spi)
 
-    implementation("de.fraunhofer.iais.eis.ids.infomodel:infomodel-java:1.0.2-basecamp")
-    implementation("de.fraunhofer.iais.eis.ids.infomodel:infomodel-util:1.0.2-basecamp")
+    implementation(libs.okhttp)
+    implementation(libs.json)
+    implementation(libs.jackson.datatype.jsr310)
 
-    implementation("org.postgresql:postgresql:42.4.5")
-    implementation("org.flywaydb:flyway-core:9.0.1")
+    implementation(libs.jersey.multipart)
 
-    testImplementation("org.assertj:assertj-core:${assertj}")
-    testImplementation("org.junit.jupiter:junit-jupiter-api:${jupiterVersion}")
-    testImplementation("org.mockito:mockito-core:${mockitoVersion}")
-    testImplementation("org.mockito:mockito-core:${mockitoVersion}")
-    testImplementation("org.junit.jupiter:junit-jupiter-params:${jupiterVersion}")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:${jupiterVersion}")
+    implementation(libs.infomodel.java)
+    implementation(libs.infomodel.util)
+
+    implementation(libs.postgresql)
+    implementation(libs.flyway)
 }
 
-tasks.getByName<Test>("test") {
-    useJUnitPlatform()
+java {
+    withSourcesJar()
 }
 
 publishing {

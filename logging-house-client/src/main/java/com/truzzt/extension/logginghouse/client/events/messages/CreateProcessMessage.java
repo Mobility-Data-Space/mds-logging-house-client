@@ -21,7 +21,7 @@ import java.net.URI;
 import java.net.URL;
 import java.util.List;
 
-public record CreateProcessMessage(
+public record CreateProcessMessage(String counterPartyId,
         URL clearingHouseLogUrl,
         URI connectorBaseUrl,
         String processId,
@@ -36,5 +36,10 @@ public record CreateProcessMessage(
     @Override
     public String getCounterPartyAddress() {
         return clearingHouseLogUrl.toString();
+    }
+
+    @Override
+    public String getCounterPartyId() {
+        return counterPartyId;
     }
 }
