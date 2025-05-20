@@ -1,3 +1,10 @@
+# [1.2.0-alpha.2](https://github.com/truzzt/mds-ap3/compare/v1.2.0-alpha.1...v1.2.0-alpha.2) (2025-05-20)
+
+
+### Features
+
+* migrating to edc 0.12.0 ([0e7b84e](https://github.com/truzzt/mds-ap3/commit/0e7b84eac41c26bb13908b6e21f77156e76a82ec))
+
 # [1.2.0-alpha.1](https://github.com/truzzt/mds-ap3/compare/v1.1.0...v1.2.0-alpha.1) (2024-08-25)
 
 
