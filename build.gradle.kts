@@ -32,24 +32,7 @@ allprojects {
         mavenCentral()
         mavenLocal()
         maven {
-            url = uri("https://oss.sonatype.org/content/repositories/snapshots/")
-        }
-        maven {
             url = uri("https://maven.pkg.github.com/ids-basecamp/ids-infomodel-java")
-            credentials {
-                username = project.findProperty("gpr.user") as String? ?: System.getenv("USERNAME")
-                password = project.findProperty("gpr.key") as String? ?: System.getenv("TOKEN")
-            }
-        }
-        maven {
-            url = uri("https://maven.pkg.github.com/sovity/core-edc")
-            credentials {
-                username = project.findProperty("gpr.user") as String? ?: System.getenv("USERNAME")
-                password = project.findProperty("gpr.key") as String? ?: System.getenv("TOKEN")
-            }
-        }
-        maven {
-            url = uri("https://maven.pkg.github.com/sovity/edc-ce")
             credentials {
                 username = project.findProperty("gpr.user") as String? ?: System.getenv("USERNAME")
                 password = project.findProperty("gpr.key") as String? ?: System.getenv("TOKEN")
@@ -64,7 +47,7 @@ subprojects {
     publishing {
         repositories {
             maven {
-                url = uri("https://maven.pkg.github.com/truzzt/mds-ap3")
+                url = uri("https://maven.pkg.github.com/Mobility-Data-Space/mds-logging-house-client")
                 credentials {
                     username = project.findProperty("gpr.user") as String? ?: System.getenv("USERNAME")
                     password = project.findProperty("gpr.key") as String? ?: System.getenv("TOKEN")
