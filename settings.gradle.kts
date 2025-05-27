@@ -1,3 +1,3 @@
-rootProject.name = "logging-house"
+rootProject.name = "mds-logging-house-client"
 
-include(":logging-house-client")
+include(":extension")
