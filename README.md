@@ -1,4 +1,4 @@
-<h1 align="center">Welcome to mds-ap3 👋</h1>
+<h1 align="center">Welcome to Logging House Client 👋</h1>
 <p>
   <img alt="Version" src="https://img.shields.io/badge/version-0.1.0-blue.svg?cacheSeconds=2592000" />
   <a href="https://truzzt.github.io/mds-ap3/" target="_blank">
@@ -13,25 +13,7 @@
 
 ### 🏠 [Homepage](https://mobility-dataspace.eu)
 
-## Install
-
-```sh
-npm install
-```
-
-## Usage
-
-```sh
-docker compose up
-```
-
-## Run tests
-
-```sh
-npm run test
-```
-
-## Author
+## Authors
 
 👤 **M.Schoenenberg**
 
@@ -39,11 +21,15 @@ npm run test
 * Github: [@schoenenberg](https://github.com/schoenenberg)
 * LinkedIn: [@maximilian-schoenenberg](https://linkedin.com/in/maximilian-schoenenberg)
 
-
 👤 **D.Hommen**
 
 * Github: [@dhommen](https://github.com/dhommen)
 * LinkedIn: [@dhommen](https://www.linkedin.com/in/dhommen/)
+
+👤 **G.Jannotti**
+
+* Github: [@jannotti-glaucio](https://github.com/jannotti-glaucio)
+* LinkedIn: [@jannotti-glaucio](https://www.linkedin.com/in/jannotti-glaucio/)
 
 ## 🤝 Contributing
 
