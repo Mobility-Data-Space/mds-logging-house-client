@@ -19,14 +19,16 @@ import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.node.TextNode;
 
-import java.io.IOException;
-import java.time.ZonedDateTime;
-import java.util.GregorianCalendar;
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
+import java.io.IOException;
+import java.io.Serial;
+import java.time.ZonedDateTime;
+import java.util.GregorianCalendar;
 
 public class XmlGregorianCalendarDeserializer extends StdDeserializer<XMLGregorianCalendar> {
+    @Serial
     private static final long serialVersionUID = 1L;
 
     public XmlGregorianCalendarDeserializer() {
