@@ -6,7 +6,6 @@ on:
 
 env:
   REGISTRY: ghcr.io/Mobility-Data-Space/mds-logging-house-client
-  IMAGE_TAG: ${{ github.event.release.name }}
 
 jobs:
   build-and-publish:
@@ -22,10 +21,13 @@ jobs:
           distribution: 'temurin'
       - name: Validate Gradle wrapper
         uses: gradle/actions/wrapper-validation@v3
+      - name: Version
+        id: version
+        run: echo "::set-output name=ref_name::${ github.event.release.name }"
       - name: Publish
         uses: gradle/actions/setup-gradle@v3
         with:
-          arguments: -Pversion=${{ env.IMAGE_TAG }} publish
+          arguments: -Pversion=${{ steps.version.outputs.ref_name }} publish
         env:
           USERNAME: ${{ github.actor }}
           TOKEN: ${{ github.token }}
