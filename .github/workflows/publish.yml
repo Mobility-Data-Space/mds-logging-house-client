@@ -23,7 +23,7 @@ jobs:
         uses: gradle/actions/wrapper-validation@v3
       - name: Version
         id: version
-        run: echo "::set-output name=ref_name::${ github.event.release.name }"
+        run: echo "::set-output name=ref_name::${github.event.release.name#v}"
       - name: Publish
         uses: gradle/actions/setup-gradle@v3
         with:
