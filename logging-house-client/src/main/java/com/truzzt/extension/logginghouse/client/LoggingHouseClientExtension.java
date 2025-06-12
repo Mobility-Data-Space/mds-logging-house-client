@@ -14,7 +14,6 @@
 
 package com.truzzt.extension.logginghouse.client;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.truzzt.extension.logginghouse.client.events.ConnectorAvailableEvent;
 import com.truzzt.extension.logginghouse.client.events.CustomLoggingHouseEvent;
 import com.truzzt.extension.logginghouse.client.events.LoggingHouseEventSubscriber;
@@ -130,7 +129,6 @@ public class LoggingHouseClientExtension implements ServiceExtension {
     private TransferProcessStore transferProcessStore;
     @Inject
     private AssetIndex assetIndex;
-    private ObjectMapper objectMapper;
 
     public Monitor monitor;
     private boolean enabled;
@@ -147,16 +145,15 @@ public class LoggingHouseClientExtension implements ServiceExtension {
     public void initialize(ServiceExtensionContext context) {
         monitor = context.getMonitor();
 
-        objectMapper = new ObjectMapper();
-
         var extensionEnabled = context.getSetting(LOGGINGHOUSE_ENABLED_SETTING, true);
         if (!extensionEnabled) {
             enabled = false;
-            monitor.info("Logginghouse client extension is disabled.");
+            monitor.info("LoggingHouseClientExtension is disabled.");
             return;
+        } else {
+            enabled = true;
+            monitor.info("LoggingHouseClientExtension is enabled.");
         }
-        enabled = true;
-        monitor.info("Logginghouse client extension is enabled.");
 
         loggingHouseLogUrl = readUrlFromSettings(context);
 
@@ -264,10 +261,9 @@ public class LoggingHouseClientExtension implements ServiceExtension {
         var executor = new WorkersExecutor(Duration.ofSeconds(periodSeconds), Duration.ofSeconds(initialDelaySeconds), monitor);
 
         var maxWorkers = context.getSetting(LOGGINGHOUSE_EXTENSION_MAX_WORKERS, 1);
+        var retriesLimit = context.getSetting(LOGGINGHOUSE_RETRY_LIMIT_SETTING, 10);
 
-        return new LoggingHouseWorkersManager(participantId, executor, monitor, maxWorkers, store, dispatcherRegistry,
-                hostname, loggingHouseLogUrl
-        );
+        return new LoggingHouseWorkersManager(participantId, executor, monitor, maxWorkers, retriesLimit, store, dispatcherRegistry, hostname, loggingHouseLogUrl);
     }
 
     private void registerDispatcher(ServiceExtensionContext context) {

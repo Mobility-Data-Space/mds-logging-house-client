@@ -34,6 +34,7 @@ import org.eclipse.edc.spi.EdcException;
 import org.eclipse.edc.spi.iam.IdentityService;
 import org.eclipse.edc.spi.iam.TokenParameters;
 import org.eclipse.edc.spi.monitor.Monitor;
+import org.eclipse.edc.spi.response.ResponseStatus;
 import org.eclipse.edc.spi.response.StatusResult;
 import org.eclipse.edc.spi.result.Result;
 import org.eclipse.edc.spi.types.domain.message.RemoteMessage;
@@ -43,6 +44,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.http.HttpHeaders;
+import java.text.ParseException;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
@@ -148,7 +150,7 @@ public class IdsMultipartSender {
                 .addHeader("Content-Type", MediaType.MULTIPART_FORM_DATA)
                 .post(multipartRequestBody)
                 .build();
-
+      
         try (var response = httpClient.execute(httpRequest)) {
             monitor.debug("Response received from connector. Status " + response.code());
 
@@ -188,7 +190,7 @@ public class IdsMultipartSender {
                 );
     }
 
-    protected IdsMultipartParts extractResponseParts(ResponseBody body) throws Exception {
+    protected IdsMultipartParts extractResponseParts(ResponseBody body) throws IOException, ParseException {
         InputStream header = null;
         InputStream payload = null;
         try (var multipartReader = new MultipartReader(Objects.requireNonNull(body))) {
