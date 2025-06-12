@@ -9,7 +9,7 @@ on:
       - develop
       - main
 jobs:
-  build-and-analyse:
+  build:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -26,11 +26,10 @@ jobs:
           distribution: 'temurin'
       - name: Validate Gradle wrapper
         uses: gradle/wrapper-validation-action@v3
-      - name: Build and Analyse
+      - name: Build
         uses: gradle/gradle-build-action@v3
         with:
-          arguments: build sonar
+          arguments: build
         env:
           USERNAME: ${{ github.actor }}
           TOKEN: ${{ github.token }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

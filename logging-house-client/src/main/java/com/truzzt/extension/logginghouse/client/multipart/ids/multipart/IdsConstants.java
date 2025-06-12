@@ -21,4 +21,8 @@ public final class IdsConstants {
 
     public static final String TOKEN_SCOPE = "idsc:IDS_CONNECTOR_ATTRIBUTES_ALL";
 
+    public static final String AUDIENCE_CLAIM = "aud";
+
+    public static final String SCOPE_CLAIM = "scope";
+
 }

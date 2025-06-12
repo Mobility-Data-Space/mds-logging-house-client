@@ -18,13 +18,13 @@ import com.truzzt.extension.logginghouse.client.multipart.ids.multipart.Calendar
 import com.truzzt.extension.logginghouse.client.spi.store.LoggingHouseMessageStore;
 import com.truzzt.extension.logginghouse.client.spi.types.LoggingHouseMessage;
 import com.truzzt.extension.logginghouse.client.spi.types.LoggingHouseMessageStatus;
-import org.eclipse.edc.connector.contract.spi.event.contractnegotiation.ContractNegotiationFinalized;
-import org.eclipse.edc.connector.contract.spi.negotiation.store.ContractNegotiationStore;
-import org.eclipse.edc.connector.contract.spi.types.agreement.ContractAgreement;
-import org.eclipse.edc.connector.transfer.spi.event.TransferProcessEvent;
-import org.eclipse.edc.connector.transfer.spi.store.TransferProcessStore;
-import org.eclipse.edc.connector.transfer.spi.types.TransferProcess;
-import org.eclipse.edc.spi.asset.AssetIndex;
+import org.eclipse.edc.connector.controlplane.asset.spi.index.AssetIndex;
+import org.eclipse.edc.connector.controlplane.contract.spi.event.contractnegotiation.ContractNegotiationFinalized;
+import org.eclipse.edc.connector.controlplane.contract.spi.negotiation.store.ContractNegotiationStore;
+import org.eclipse.edc.connector.controlplane.contract.spi.types.agreement.ContractAgreement;
+import org.eclipse.edc.connector.controlplane.transfer.spi.event.TransferProcessEvent;
+import org.eclipse.edc.connector.controlplane.transfer.spi.store.TransferProcessStore;
+import org.eclipse.edc.connector.controlplane.transfer.spi.types.TransferProcess;
 import org.eclipse.edc.spi.event.Event;
 import org.eclipse.edc.spi.event.EventEnvelope;
 import org.eclipse.edc.spi.event.EventSubscriber;
@@ -36,22 +36,23 @@ import java.util.Objects;
 
 public class LoggingHouseEventSubscriber implements EventSubscriber {
 
+    private final String participantId;
     private final LoggingHouseMessageStore loggingHouseMessageStore;
     private final ContractNegotiationStore contractNegotiationStore;
     private final TransferProcessStore transferProcessStore;
-    private final String connectorId;
     private final AssetIndex assetIndex;
     private final Monitor monitor;
 
-    public LoggingHouseEventSubscriber(
+    public LoggingHouseEventSubscriber(String participantId,
             LoggingHouseMessageStore loggingHouseMessageStore,
             ContractNegotiationStore contractNegotiationStore,
-            TransferProcessStore transferProcessStore, String connectorId, AssetIndex assetIndex,
+            TransferProcessStore transferProcessStore,
+            AssetIndex assetIndex,
             Monitor monitor) {
+        this.participantId = participantId;
         this.loggingHouseMessageStore = loggingHouseMessageStore;
         this.contractNegotiationStore = contractNegotiationStore;
         this.transferProcessStore = transferProcessStore;
-        this.connectorId = connectorId;
         this.assetIndex = assetIndex;
         this.monitor = monitor;
     }
@@ -105,10 +106,10 @@ public class LoggingHouseEventSubscriber implements EventSubscriber {
         var jo = new JSONObject();
 
         jo.put("Timestamp", CalendarUtil.gregorianNow().toString());
-        jo.put("ConnectorId", connectorId);
+        jo.put("ParticipantId", participantId);
 
         // Check if connector is the provider
-        if (contractAgreement.getProviderId().equals(connectorId)) {
+        if (contractAgreement.getProviderId().equals(participantId)) {
             // In case of the provider, log asset information
             var asset = assetIndex.findById(contractAgreement.getAssetId());
 
@@ -152,13 +153,12 @@ public class LoggingHouseEventSubscriber implements EventSubscriber {
         var jo = new JSONObject();
 
         jo.put("Timestamp", CalendarUtil.gregorianNow().toString());
-        jo.put("ConnectorId", connectorId);
+        jo.put("ParticipantId", participantId);
 
         jo.put("TransferProcessId", transferProcess.getId());
         jo.put("TransferState", transferProcess.stateAsString());
         jo.put("TransferProtocol", transferProcess.getProtocol());
         jo.put("TransferContractId", transferProcess.getContractId());
-        jo.put("TransferConnectorId", transferProcess.getConnectorId());
         jo.put("TransferAssetId", transferProcess.getAssetId());
 
         var message = LoggingHouseMessage.Builder.newInstance()
