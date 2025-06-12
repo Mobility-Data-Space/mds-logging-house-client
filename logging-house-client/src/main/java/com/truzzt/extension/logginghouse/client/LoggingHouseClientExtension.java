@@ -75,6 +75,7 @@ import static com.truzzt.extension.logginghouse.client.ConfigConstants.LOGGINGHO
 import static com.truzzt.extension.logginghouse.client.ConfigConstants.LOGGINGHOUSE_EXTENSION_WORKERS_PERIOD;
 import static com.truzzt.extension.logginghouse.client.ConfigConstants.LOGGINGHOUSE_FLYWAY_CLEAN_SETTING;
 import static com.truzzt.extension.logginghouse.client.ConfigConstants.LOGGINGHOUSE_FLYWAY_REPAIR_SETTING;
+import static com.truzzt.extension.logginghouse.client.ConfigConstants.LOGGINGHOUSE_RETRY_LIMIT_SETTING;
 import static com.truzzt.extension.logginghouse.client.ConfigConstants.LOGGINGHOUSE_URL_SETTING;
 import static com.truzzt.extension.logginghouse.client.multipart.ExtendedMessageProtocolClearing.IDS_EXTENDED_PROTOCOL_CLEARING;
 

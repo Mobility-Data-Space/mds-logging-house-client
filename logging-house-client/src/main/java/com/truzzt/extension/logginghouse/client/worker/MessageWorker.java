@@ -49,7 +49,8 @@ public class MessageWorker {
                          RemoteMessageDispatcherRegistry dispatcherRegistry,
                          URI connectorBaseUrl,
                          URL loggingHouseUrl,
-                         LoggingHouseMessageStore store) {
+                         LoggingHouseMessageStore store,
+                         int retryLimit) {
         this.participantId = participantId;
         this.monitor = monitor;
         this.dispatcherRegistry = dispatcherRegistry;

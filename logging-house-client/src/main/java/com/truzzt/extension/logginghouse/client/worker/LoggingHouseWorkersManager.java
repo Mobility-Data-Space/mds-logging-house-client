@@ -142,7 +142,7 @@ public class LoggingHouseWorkersManager {
     private ArrayBlockingQueue<MessageWorker> createWorkers(int numWorkers, int retriesLimit) {
 
         return new ArrayBlockingQueue<>(numWorkers, true, IntStream.range(0, numWorkers)
-                .mapToObj(i -> new MessageWorker(participantId, monitor, dispatcherRegistry, connectorBaseUrl, loggingHouseUrl, store))
+                .mapToObj(i -> new MessageWorker(participantId, monitor, dispatcherRegistry, connectorBaseUrl, loggingHouseUrl, store, retriesLimit))
                 .collect(Collectors.toList()));
     }
 
