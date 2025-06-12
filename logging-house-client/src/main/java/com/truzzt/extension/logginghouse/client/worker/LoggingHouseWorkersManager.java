@@ -37,6 +37,7 @@ import static java.lang.String.format;
 
 public class LoggingHouseWorkersManager {
 
+    private final String participantId;
     private final WorkersExecutor executor;
     private final Monitor monitor;
     private final int maxWorkers;
@@ -45,13 +46,15 @@ public class LoggingHouseWorkersManager {
     private final URI connectorBaseUrl;
     private final URL loggingHouseUrl;
 
-    public LoggingHouseWorkersManager(WorkersExecutor executor,
+    public LoggingHouseWorkersManager(String participantId,
+                                      WorkersExecutor executor,
                                       Monitor monitor,
                                       int maxWorkers,
                                       LoggingHouseMessageStore store,
                                       RemoteMessageDispatcherRegistry dispatcherRegistry,
                                       Hostname hostname,
                                       URL loggingHouseUrl) {
+        this.participantId = participantId;
         this.executor = executor;
         this.monitor = monitor;
         this.maxWorkers = maxWorkers;
@@ -136,7 +139,7 @@ public class LoggingHouseWorkersManager {
     private ArrayBlockingQueue<MessageWorker> createWorkers(int numWorkers) {
 
         return new ArrayBlockingQueue<>(numWorkers, true, IntStream.range(0, numWorkers)
-                .mapToObj(i -> new MessageWorker(monitor, dispatcherRegistry, connectorBaseUrl, loggingHouseUrl, store))
+                .mapToObj(i -> new MessageWorker(participantId, monitor, dispatcherRegistry, connectorBaseUrl, loggingHouseUrl, store))
                 .collect(Collectors.toList()));
     }
 

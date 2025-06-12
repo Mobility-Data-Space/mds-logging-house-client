@@ -1,3 +1,40 @@
+# [1.2.0-alpha.2](https://github.com/truzzt/mds-ap3/compare/v1.2.0-alpha.1...v1.2.0-alpha.2) (2025-05-20)
+
+
+### Features
+
+* migrating to edc 0.12.0 ([0e7b84e](https://github.com/truzzt/mds-ap3/commit/0e7b84eac41c26bb13908b6e21f77156e76a82ec))
+
+# [1.2.0-alpha.1](https://github.com/truzzt/mds-ap3/compare/v1.1.0...v1.2.0-alpha.1) (2024-08-25)
+
+
+### Bug Fixes
+
+* checkstyle warnings ([d905084](https://github.com/truzzt/mds-ap3/commit/d9050843fee3434388dc323700fe5d173b6d87d8))
+* ordering of pending statements ([810d7c1](https://github.com/truzzt/mds-ap3/commit/810d7c173f9d10da8ea6cb23f43d894588c16289))
+* special case of unordered messages, where logginghouse is shortly not available ([c49573f](https://github.com/truzzt/mds-ap3/commit/c49573fbeec32c3f92fc4182a5f8fc173ecfd8bf))
+
+
+### Features
+
+* Added CustomLoggingHouseEvent with an implementation of ConnectorAvailableEvent ([8098a5a](https://github.com/truzzt/mds-ap3/commit/8098a5ae1740afbfe3680576108caeb6a436e02b))
+
+# [1.1.0](https://github.com/truzzt/mds-ap3/compare/v1.0.2...v1.1.0) (2024-07-04)
+
+
+### Bug Fixes
+
+* checkstyle warnings ([dd3dd10](https://github.com/truzzt/mds-ap3/commit/dd3dd100c632a0c00f45b53ed35660a503c430ae))
+* disabled state ([88ada14](https://github.com/truzzt/mds-ap3/commit/88ada14334c37665367bf55403964114228fbfc6))
+* issue in insert statement, decode receipt ([2bbbc9a](https://github.com/truzzt/mds-ap3/commit/2bbbc9a4d9b3745bf7639b8ed5b9ddf3d6c48026))
+* remove not null constraint for TransferProcess ([e2e7187](https://github.com/truzzt/mds-ap3/commit/e2e718706f2acac36dc7bddd9528dcb555e59d57))
+* remove status parsing of not existent status column ([7650ed4](https://github.com/truzzt/mds-ap3/commit/7650ed4a052690e10846496655ced698f7206ef3))
+
+
+### Features
+
+* receive and store receipt into database ([b12aa3d](https://github.com/truzzt/mds-ap3/commit/b12aa3d020d217f25b2427a77fd0ecf35012cf2b))
+
 ## [1.0.2](https://github.com/truzzt/mds-ap3/compare/v1.0.1...v1.0.2) (2024-07-03)
 
 

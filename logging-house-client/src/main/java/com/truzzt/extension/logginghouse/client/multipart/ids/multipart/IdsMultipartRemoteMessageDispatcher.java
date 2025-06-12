@@ -14,9 +14,9 @@
 
 package com.truzzt.extension.logginghouse.client.multipart.ids.multipart;
 
-import org.eclipse.edc.connector.transfer.spi.types.protocol.TransferCompletionMessage;
-import org.eclipse.edc.connector.transfer.spi.types.protocol.TransferStartMessage;
-import org.eclipse.edc.connector.transfer.spi.types.protocol.TransferTerminationMessage;
+import org.eclipse.edc.connector.controlplane.transfer.spi.types.protocol.TransferCompletionMessage;
+import org.eclipse.edc.connector.controlplane.transfer.spi.types.protocol.TransferStartMessage;
+import org.eclipse.edc.connector.controlplane.transfer.spi.types.protocol.TransferTerminationMessage;
 import org.eclipse.edc.spi.EdcException;
 import org.eclipse.edc.spi.message.RemoteMessageDispatcher;
 import org.eclipse.edc.spi.response.StatusResult;
@@ -29,8 +29,6 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 public class IdsMultipartRemoteMessageDispatcher implements RemoteMessageDispatcher {
-
-    public static final String PROTOCOL = "ids-multipart";
 
     private final IdsMultipartSender multipartSender;
     private final Map<Class<? extends RemoteMessage>, MultipartSenderDelegate<? extends RemoteMessage, ?>> delegates = new HashMap<>();
@@ -46,11 +44,6 @@ public class IdsMultipartRemoteMessageDispatcher implements RemoteMessageDispatc
 
     public <M extends RemoteMessage, R> void register(MultipartSenderDelegate<M, R> delegate) {
         delegates.put(delegate.getMessageType(), delegate);
-    }
-
-    @Override
-    public String protocol() {
-        return PROTOCOL;
     }
 
     @Override

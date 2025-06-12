@@ -22,9 +22,4 @@ public class IdsMultipartClearingRemoteMessageDispatcher extends IdsMultipartRem
     public IdsMultipartClearingRemoteMessageDispatcher(IdsMultipartSender idsMultipartSender) {
         super(idsMultipartSender);
     }
-
-    @Override
-    public String protocol() {
-        return ExtendedMessageProtocolClearing.IDS_EXTENDED_PROTOCOL_CLEARING;
-    }
 }

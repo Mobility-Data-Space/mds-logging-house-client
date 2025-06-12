@@ -21,9 +21,11 @@ import org.eclipse.edc.spi.types.domain.message.RemoteMessage;
 import java.net.URI;
 import java.net.URL;
 
-public record LogMessage(URL clearingHouseLogUrl,
+public record LogMessage(String counterPartyId,
+                         URL clearingHouseLogUrl,
                          URI connectorBaseUrl,
                          String eventToLog) implements RemoteMessage {
+
     @Override
     public String getProtocol() {
         return ExtendedMessageProtocolClearing.IDS_EXTENDED_PROTOCOL_CLEARING;
@@ -32,5 +34,10 @@ public record LogMessage(URL clearingHouseLogUrl,
     @Override
     public String getCounterPartyAddress() {
         return clearingHouseLogUrl.toString();
+    }
+
+    @Override
+    public String getCounterPartyId() {
+        return counterPartyId;
     }
 }
