@@ -32,13 +32,13 @@ Once the repository is added and authentication is configured, you can include t
 
 ```kotlin
 dependencies {
-    implementation("logging-house:logging-house-client:v1.1.0")
+    implementation("mds-logging-house:client:1.0.0")
 }
 ```
 
 ### Environment Configuration
 
-The `logging-house-client` relies on two key environment variables for configuration:
+The `mds-logging-house-client` relies on two key environment variables for configuration:
 
 | Name                                  | Default | Description                                                  |
 | ------------------------------------- | ------- | ------------------------------------------------------------ |
