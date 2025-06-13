@@ -1,6 +1,5 @@
 # Clients
 
-
 ## Java EDC Extension
 
 ### Integrating with Maven Repository
@@ -11,7 +10,7 @@ To use the Maven package from our repository, update your `build.gradle.kts` wit
 repositories {
     mavenCentral()
     maven {
-        url = uri("https://maven.pkg.github.com/truzzt/mds-ap3")
+        url = uri("https://maven.pkg.github.com/Mobility-Data-Space/mds-logging-house-client")
         credentials {
             username = project.findProperty("gpr.user") as String? ?: System.getenv("USERNAME")
             password = project.findProperty("gpr.key") as String? ?: System.getenv("TOKEN")
@@ -32,29 +31,22 @@ Once the repository is added and authentication is configured, you can include t
 
 ```kotlin
 dependencies {
-    implementation("mds-logging-house:client:1.0.0")
+    implementation("mds-logging-house:client")
 }
 ```
 
 ### Environment Configuration
 
-The `mds-logging-house-client` relies on two key environment variables for configuration:
+The `logging-house-client` relies on two key environment variables for configuration:
 
-| Name                                  | Default | Description                                                  |
-| ------------------------------------- | ------- | ------------------------------------------------------------ |
-| `EDC_LOGGINGHOUSE_EXTENSION_ENABLED` | `false` | Set to `true` to enable the extension, or `false` to disable it. |
-| `EDC_LOGGINGHOUSE_LOG_URL`           | `none`  | Specify the URL of the Logging-House-Server (e.g., `clearing.demo.truzzt.eu`). |
-| `EDC_DATASOURCE_LOGGINGHOUSE_URL` | `none` | Specify the URL of the database (e.g., `postgres://some-url`). |
-| `EDC_DATASOURCE_LOGGINGHOUSE_USER` | `none` | Specify the user of the database. |
-| `EDC_DATASOURCE_LOGGINGHOUSE_PASSWORD` | `none` | Specify the password of the database. |
+| Name                                        | Required | Default   | Description                                                                   |
+|---------------------------------------------|----------|-----------|-------------------------------------------------------------------------------|
+| `EDC_LOGGINGHOUSE_EXTENSION_ENABLED`        | no       | `false`   | Set to `true` to enable the extension, or `false` to disable it               |
+| `EDC_LOGGINGHOUSE_EXTENSION_URL`            | yes      | `none`    | Specify the URL of the Logging-House-Server (e.g., `clearing.demo.truzzt.eu`) |
+| `EDC_LOGGINGHOUSE_EXTENSION_FLYWAY_REPAIR`  | no       | `false`   | Enable the flyway repair command on extension startup                         |
+| `EDC_LOGGINGHOUSE_EXTENSION_FLYWAY_CLEAN`   | no       | `false`   | Enable the flyway clean command on extension startup                          |
+| `EDC_LOGGINGHOUSE_EXTENSION_WORKERS_MAX`    | no       | `1`       | Specify the maximum number of workers created to parallel processing          |
+| `EDC_LOGGINGHOUSE_EXTENSION_WORKERS_DELAY`  | no       | `30`      | Specify the delay, in seconds, before the first workers execution             |
+| `EDC_LOGGINGHOUSE_EXTENSION_WORKERS_PERIOD` | no       | `10`      | Specify the period, in seconds, between each workers execution                |
 
 Ensure these environment variables are set as per your requirements for optimal functionality of the client.
-
-### Advanced Environment Configuration
-| Name                                  | Default | Description                                                  |
-| ------------------------------------- | ------- | ------------------------------------------------------------ |
-| `EDC_LOGGINGHOUSE_EXTENSION_FLYWAY_REPAIR` | `false` | Recreates the flyway history tables, beafore applying the scripts. |
-| `EDC_LOGGINGHOUSE_EXTENSION_FLYWAY_CLEAN` | `false`  | Executes a clean on the database, before applying the scripts. |
-| `EDC_LOGGINGHOUSE_EXTENSION_WORKERS_MAX` | `1` | Maximun number of workers created to handle the pending items. |
-| `EDC_LOGGINGHOUSE_EXTENSION_WORKERS_DELTA` | `30` | Time in seconds, after the connector initializes, to the workers start to run. |
-| `EDC_LOGGINGHOUSE_EXTENSION_WORKERS_PERIOD` | `10` | Time in seconds, between each workers processing. |
