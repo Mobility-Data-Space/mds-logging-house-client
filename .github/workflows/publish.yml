@@ -5,9 +5,7 @@ on:
     types: [published]
 
 env:
-  REGISTRY: ghcr.io/truzzt/mds-ap3
-  DOCKER_USERNAME: ${{ github.actor }}
-  DOCKER_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+  REGISTRY: ghcr.io/Mobility-Data-Space/mds-logging-house-client
   IMAGE_TAG: ${{ github.event.release.name }}
 
 jobs:

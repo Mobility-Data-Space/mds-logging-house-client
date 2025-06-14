@@ -1,4 +1,4 @@
-# Code of Conduct - mds-ap3
+# Code of Conduct - mds-logging-house-client
 
 ## Our Pledge
 
