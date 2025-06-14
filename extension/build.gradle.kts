@@ -32,6 +32,8 @@ publishing {
     publications {
         create<MavenPublication>(project.name) {
             from(components["java"])
+            groupId = "mds-logging-house"
+            artifactId = "client"
         }
     }
 }

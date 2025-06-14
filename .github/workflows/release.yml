@@ -2,9 +2,8 @@ name: Release
 on:
   push:
     branches:
+      - rc
       - main
-      - beta
-      - alpha
     paths-ignore:
       - docs/
       - book.toml
