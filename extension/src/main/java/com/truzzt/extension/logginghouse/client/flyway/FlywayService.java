@@ -25,8 +25,8 @@ import org.flywaydb.core.api.MigrationVersion;
 import org.flywaydb.core.api.output.MigrateResult;
 import org.flywaydb.core.api.output.RepairResult;
 
-import javax.sql.DataSource;
 import java.util.List;
+import javax.sql.DataSource;
 
 public class FlywayService {
 
