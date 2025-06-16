@@ -1,3 +1,11 @@
+# [1.0.0-rc.2](https://github.com/Mobility-Data-Space/mds-logging-house-client/compare/v1.0.0-rc.1...v1.0.0-rc.2) (2025-06-16)
+
+
+### Features
+
+* creating in-memory store ([2608831](https://github.com/Mobility-Data-Space/mds-logging-house-client/commit/2608831f74a9223281e29c2dd4b31213c55967de))
+* creating in-memory store ([0299636](https://github.com/Mobility-Data-Space/mds-logging-house-client/commit/0299636ed714aad4a723546527efbe8cd101b53e))
+
 # 1.0.0-rc.1 (2025-06-16)
 
 
