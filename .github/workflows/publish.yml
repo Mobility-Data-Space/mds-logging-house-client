@@ -1,0 +1,33 @@
+name: Build and Publish
+
+on:
+  release:
+    types: [published]
+
+env:
+  REGISTRY: ghcr.io/Mobility-Data-Space/mds-logging-house-client
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+      - name: Validate Gradle wrapper
+        uses: gradle/actions/wrapper-validation@v3
+      - name: Version
+        id: version
+        run: echo "::set-output name=ref_name::${GITHUB_REF_NAME#v}"
+      - name: Publish
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          arguments: -Pversion=${{ steps.version.outputs.ref_name }} publish
+        env:
+          USERNAME: ${{ github.actor }}
+          TOKEN: ${{ github.token }}

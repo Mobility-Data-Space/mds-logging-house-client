@@ -1,0 +1,35 @@
+name: Build and Analyse
+on:
+  pull_request:
+    branches:
+      - develop
+      - main
+  push:
+    branches:
+      - develop
+      - main
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Setup JDK
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+      - name: Validate Gradle wrapper
+        uses: gradle/wrapper-validation-action@v3
+      - name: Build
+        uses: gradle/gradle-build-action@v3
+        with:
+          arguments: build
+        env:
+          USERNAME: ${{ github.actor }}
+          TOKEN: ${{ github.token }}
