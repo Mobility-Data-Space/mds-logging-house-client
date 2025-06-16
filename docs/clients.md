@@ -39,14 +39,15 @@ dependencies {
 
 The `logging-house-client` relies on two key environment variables for configuration:
 
-| Name                                        | Required | Default   | Description                                                                   |
-|---------------------------------------------|----------|-----------|-------------------------------------------------------------------------------|
-| `EDC_LOGGINGHOUSE_EXTENSION_ENABLED`        | no       | `false`   | Set to `true` to enable the extension, or `false` to disable it               |
-| `EDC_LOGGINGHOUSE_EXTENSION_URL`            | yes      | `none`    | Specify the URL of the Logging-House-Server (e.g., `clearing.demo.truzzt.eu`) |
-| `EDC_LOGGINGHOUSE_EXTENSION_FLYWAY_REPAIR`  | no       | `false`   | Enable the flyway repair command on extension startup                         |
-| `EDC_LOGGINGHOUSE_EXTENSION_FLYWAY_CLEAN`   | no       | `false`   | Enable the flyway clean command on extension startup                          |
-| `EDC_LOGGINGHOUSE_EXTENSION_WORKERS_MAX`    | no       | `1`       | Specify the maximum number of workers created to parallel processing          |
-| `EDC_LOGGINGHOUSE_EXTENSION_WORKERS_DELAY`  | no       | `30`      | Specify the delay, in seconds, before the first workers execution             |
-| `EDC_LOGGINGHOUSE_EXTENSION_WORKERS_PERIOD` | no       | `10`      | Specify the period, in seconds, between each workers execution                |
+| Name                                        | Required  | Default | Description                                                                                              |
+|---------------------------------------------|-----------|---------|----------------------------------------------------------------------------------------------------------|
+| `EDC_LOGGINGHOUSE_EXTENSION_ENABLED`        | no        | `false` | Set to `true` to enable the extension, or `false` to disable it                                          |
+| `EDC_LOGGINGHOUSE_EXTENSION_PERSISTENCE`    | no        | `sql`   | Specify the persistence engine to be used: in-memory or sql (postgresql). Possible values: sql or memory |
+| `EDC_LOGGINGHOUSE_EXTENSION_URL`            | yes       | `none`  | Specify the URL of the Logging-House-Server (e.g., `clearing.demo.truzzt.eu`)                            |
+| `EDC_LOGGINGHOUSE_EXTENSION_FLYWAY_REPAIR`  | no        | `false` | Enable the flyway repair command on extension startup                                                    |
+| `EDC_LOGGINGHOUSE_EXTENSION_FLYWAY_CLEAN`   | no        | `false` | Enable the flyway clean command on extension startup                                                     |
+| `EDC_LOGGINGHOUSE_EXTENSION_WORKERS_MAX`    | no        | `1`     | Specify the maximum number of workers created to parallel processing                                     |
+| `EDC_LOGGINGHOUSE_EXTENSION_WORKERS_DELAY`  | no        | `30`    | Specify the delay, in seconds, before the first workers execution                                        |
+| `EDC_LOGGINGHOUSE_EXTENSION_WORKERS_PERIOD` | no        | `10`    | Specify the period, in seconds, between each workers execution                                           |
 
 Ensure these environment variables are set as per your requirements for optimal functionality of the client.
