@@ -27,6 +27,7 @@ import com.truzzt.extension.logginghouse.client.multipart.MultiContextJsonLdSeri
 import com.truzzt.extension.logginghouse.client.multipart.ids.jsonld.JsonLd;
 import com.truzzt.extension.logginghouse.client.multipart.ids.multipart.IdsMultipartSender;
 import com.truzzt.extension.logginghouse.client.spi.store.LoggingHouseMessageStore;
+import com.truzzt.extension.logginghouse.client.store.memory.InMemoryLoggingHouseMessageStore;
 import com.truzzt.extension.logginghouse.client.store.sql.SqlLoggingHouseMessageStore;
 import com.truzzt.extension.logginghouse.client.store.sql.schema.postgres.PostgresDialectStatements;
 import com.truzzt.extension.logginghouse.client.worker.LoggingHouseWorkersManager;
@@ -69,32 +70,38 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.UUID;
 
+import static com.truzzt.extension.logginghouse.client.ConfigConstants.LOGGINGHOUSE_ENABLED_DEFAULT;
 import static com.truzzt.extension.logginghouse.client.ConfigConstants.LOGGINGHOUSE_ENABLED_SETTING;
-import static com.truzzt.extension.logginghouse.client.ConfigConstants.LOGGINGHOUSE_EXTENSION_MAX_WORKERS;
-import static com.truzzt.extension.logginghouse.client.ConfigConstants.LOGGINGHOUSE_EXTENSION_WORKERS_DELAY;
-import static com.truzzt.extension.logginghouse.client.ConfigConstants.LOGGINGHOUSE_EXTENSION_WORKERS_PERIOD;
+import static com.truzzt.extension.logginghouse.client.ConfigConstants.LOGGINGHOUSE_EXTENSION_MAX_WORKERS_DEFAULT;
+import static com.truzzt.extension.logginghouse.client.ConfigConstants.LOGGINGHOUSE_EXTENSION_MAX_WORKERS_SETTING;
+import static com.truzzt.extension.logginghouse.client.ConfigConstants.LOGGINGHOUSE_EXTENSION_WORKERS_DELAY_DEFAULT;
+import static com.truzzt.extension.logginghouse.client.ConfigConstants.LOGGINGHOUSE_EXTENSION_WORKERS_DELAY_SETTING;
+import static com.truzzt.extension.logginghouse.client.ConfigConstants.LOGGINGHOUSE_EXTENSION_WORKERS_PERIOD_DEFAULT;
+import static com.truzzt.extension.logginghouse.client.ConfigConstants.LOGGINGHOUSE_EXTENSION_WORKERS_PERIOD_SETTING;
+import static com.truzzt.extension.logginghouse.client.ConfigConstants.LOGGINGHOUSE_FLYWAY_CLEAN_DEFAULT;
 import static com.truzzt.extension.logginghouse.client.ConfigConstants.LOGGINGHOUSE_FLYWAY_CLEAN_SETTING;
+import static com.truzzt.extension.logginghouse.client.ConfigConstants.LOGGINGHOUSE_FLYWAY_REPAIR_DEFAULT;
 import static com.truzzt.extension.logginghouse.client.ConfigConstants.LOGGINGHOUSE_FLYWAY_REPAIR_SETTING;
+import static com.truzzt.extension.logginghouse.client.ConfigConstants.LOGGINGHOUSE_PERSISTENCE_IN_MEMORY;
+import static com.truzzt.extension.logginghouse.client.ConfigConstants.LOGGINGHOUSE_PERSISTENCE_SETTING;
+import static com.truzzt.extension.logginghouse.client.ConfigConstants.LOGGINGHOUSE_PERSISTENCE_SQL;
+import static com.truzzt.extension.logginghouse.client.ConfigConstants.LOGGINGHOUSE_RETRY_LIMIT_DEFAULT;
 import static com.truzzt.extension.logginghouse.client.ConfigConstants.LOGGINGHOUSE_RETRY_LIMIT_SETTING;
 import static com.truzzt.extension.logginghouse.client.ConfigConstants.LOGGINGHOUSE_URL_SETTING;
 import static com.truzzt.extension.logginghouse.client.multipart.ExtendedMessageProtocolClearing.IDS_EXTENDED_PROTOCOL_CLEARING;
 
 @Extension(value = LoggingHouseClientExtension.NAME)
 @Requires(value = {
-    Hostname.class,
+        Hostname.class,
 
-    TypeManager.class,
-    EventRouter.class,
-    IdentityService.class,
-    RemoteMessageDispatcherRegistry.class,
+        TypeManager.class,
+        EventRouter.class,
+        IdentityService.class,
+        RemoteMessageDispatcherRegistry.class,
 
-    DataSourceRegistry.class,
-    TransactionContext.class,
-    QueryExecutor.class,
-
-    ContractNegotiationStore.class,
-    TransferProcessStore.class,
-    AssetIndex.class
+        ContractNegotiationStore.class,
+        TransferProcessStore.class,
+        AssetIndex.class
 })
 public class LoggingHouseClientExtension implements ServiceExtension {
 
@@ -117,11 +124,11 @@ public class LoggingHouseClientExtension implements ServiceExtension {
     @Inject
     private RemoteMessageDispatcherRegistry dispatcherRegistry;
 
-    @Inject
+    @Inject(required = false)
     private DataSourceRegistry dataSourceRegistry;
-    @Inject
+    @Inject(required = false)
     private TransactionContext transactionContext;
-    @Inject
+    @Inject(required = false)
     private QueryExecutor queryExecutor;
 
     @Inject
@@ -146,14 +153,9 @@ public class LoggingHouseClientExtension implements ServiceExtension {
     public void initialize(ServiceExtensionContext context) {
         monitor = context.getMonitor();
 
-        var extensionEnabled = context.getSetting(LOGGINGHOUSE_ENABLED_SETTING, true);
-        if (!extensionEnabled) {
-            enabled = false;
-            monitor.info("LoggingHouseClientExtension is disabled.");
+        enabled = isEnabled(context);
+        if (!enabled) {
             return;
-        } else {
-            enabled = true;
-            monitor.info("LoggingHouseClientExtension is enabled.");
         }
 
         loggingHouseLogUrl = readUrlFromSettings(context);
@@ -162,7 +164,7 @@ public class LoggingHouseClientExtension implements ServiceExtension {
 
         registerSerializerClearingHouseMessages(context);
 
-        var store = initializeLoggingHouseMessageStore(typeManager);
+        var store = initializeLoggingHouseMessageStore(context, typeManager);
         registerEventSubscriber(context, store);
 
         registerDispatcher(context);
@@ -170,6 +172,17 @@ public class LoggingHouseClientExtension implements ServiceExtension {
 
         participantId = context.getParticipantId();
     }
+
+    private boolean isEnabled(ServiceExtensionContext context) {
+        var enabled = context.getSetting(LOGGINGHOUSE_ENABLED_SETTING, LOGGINGHOUSE_ENABLED_DEFAULT);
+        if (enabled) {
+            monitor.info("Logginghouse client extension is enabled.");
+        } else {
+            monitor.info("Logginghouse client extension is disabled.");
+        }
+        return enabled;
+    }
+
 
     private URL readUrlFromSettings(ServiceExtensionContext context) {
         try {
@@ -187,24 +200,41 @@ public class LoggingHouseClientExtension implements ServiceExtension {
     }
 
     private void runFlywayMigrations(ServiceExtensionContext context) {
+        var persistence = context.getSetting(LOGGINGHOUSE_PERSISTENCE_SETTING, LOGGINGHOUSE_PERSISTENCE_SQL);
+
+        if (!persistence.equalsIgnoreCase(LOGGINGHOUSE_PERSISTENCE_SQL)) {
+            return;
+        }
+
         var flywayService = new FlywayService(
                 context.getMonitor(),
-                context.getSetting(LOGGINGHOUSE_FLYWAY_REPAIR_SETTING, false),
-                context.getSetting(LOGGINGHOUSE_FLYWAY_CLEAN_SETTING, false)
+                context.getSetting(LOGGINGHOUSE_FLYWAY_REPAIR_SETTING, LOGGINGHOUSE_FLYWAY_REPAIR_DEFAULT),
+                context.getSetting(LOGGINGHOUSE_FLYWAY_CLEAN_SETTING, LOGGINGHOUSE_FLYWAY_CLEAN_DEFAULT)
         );
         var migrationManager = new DatabaseMigrationManager(context.getConfig(), context.getMonitor(), flywayService);
         migrationManager.migrate();
     }
 
-    private SqlLoggingHouseMessageStore initializeLoggingHouseMessageStore(TypeManager typeManager) {
-        return new SqlLoggingHouseMessageStore(
-                dataSourceRegistry,
-                DatasourceProperties.LOGGING_HOUSE_DATASOURCE,
-                transactionContext,
-                typeManager.getMapper(),
-                new PostgresDialectStatements(),
-                queryExecutor
-        );
+    private LoggingHouseMessageStore initializeLoggingHouseMessageStore(ServiceExtensionContext context, TypeManager typeManager) {
+        var persistence = context.getSetting(LOGGINGHOUSE_PERSISTENCE_SETTING, LOGGINGHOUSE_PERSISTENCE_SQL);
+
+        if (persistence.equalsIgnoreCase(LOGGINGHOUSE_PERSISTENCE_SQL)) {
+            monitor.debug("Registering SQL stores for LoggingHouseClientExtension");
+
+            return new SqlLoggingHouseMessageStore(
+                    dataSourceRegistry,
+                    DatasourceProperties.LOGGING_HOUSE_DATASOURCE,
+                    transactionContext,
+                    typeManager.getMapper(),
+                    new PostgresDialectStatements(),
+                    queryExecutor
+            );
+        } else if (persistence.equalsIgnoreCase(LOGGINGHOUSE_PERSISTENCE_IN_MEMORY)) {
+            monitor.debug("Registering Memory stores for LoggingHouseClientExtension");
+            return new InMemoryLoggingHouseMessageStore();
+        } else {
+            throw new EdcException("Invalid persistence type: " + persistence);
+        }
     }
 
     private void registerEventSubscriber(ServiceExtensionContext context, LoggingHouseMessageStore loggingHouseMessageStore) {
@@ -257,14 +287,16 @@ public class LoggingHouseClientExtension implements ServiceExtension {
     }
 
     private LoggingHouseWorkersManager initializeWorkersManager(ServiceExtensionContext context, LoggingHouseMessageStore store) {
-        var initialDelaySeconds = context.getSetting(LOGGINGHOUSE_EXTENSION_WORKERS_DELAY, 30);
-        var periodSeconds = context.getSetting(LOGGINGHOUSE_EXTENSION_WORKERS_PERIOD, 10);
-        var executor = new WorkersExecutor(Duration.ofSeconds(periodSeconds), Duration.ofSeconds(initialDelaySeconds), monitor);
+        var initialDelaySeconds = context.getSetting(LOGGINGHOUSE_EXTENSION_WORKERS_DELAY_SETTING, LOGGINGHOUSE_EXTENSION_WORKERS_DELAY_DEFAULT);
+        var periodSeconds = context.getSetting(LOGGINGHOUSE_EXTENSION_WORKERS_PERIOD_SETTING, LOGGINGHOUSE_EXTENSION_WORKERS_PERIOD_DEFAULT);
+        var executor = new WorkersExecutor(Duration.ofSeconds(initialDelaySeconds), Duration.ofSeconds(periodSeconds), monitor);
 
-        var maxWorkers = context.getSetting(LOGGINGHOUSE_EXTENSION_MAX_WORKERS, 1);
-        var retriesLimit = context.getSetting(LOGGINGHOUSE_RETRY_LIMIT_SETTING, 10);
+        var maxWorkers = context.getSetting(LOGGINGHOUSE_EXTENSION_MAX_WORKERS_SETTING, LOGGINGHOUSE_EXTENSION_MAX_WORKERS_DEFAULT);
+        var retriesLimit = context.getSetting(LOGGINGHOUSE_RETRY_LIMIT_SETTING, LOGGINGHOUSE_RETRY_LIMIT_DEFAULT);
 
-        return new LoggingHouseWorkersManager(participantId, executor, monitor, maxWorkers, retriesLimit, store, dispatcherRegistry, hostname, loggingHouseLogUrl);
+        return new LoggingHouseWorkersManager(participantId, executor, monitor, maxWorkers, retriesLimit, store, dispatcherRegistry,
+                hostname, loggingHouseLogUrl
+        );
     }
 
     private void registerDispatcher(ServiceExtensionContext context) {
