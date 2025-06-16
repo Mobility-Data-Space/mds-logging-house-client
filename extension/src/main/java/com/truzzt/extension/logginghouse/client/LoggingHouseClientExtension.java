@@ -202,8 +202,9 @@ public class LoggingHouseClientExtension implements ServiceExtension {
     private void runFlywayMigrations(ServiceExtensionContext context) {
         var persistence = context.getSetting(LOGGINGHOUSE_PERSISTENCE_SETTING, LOGGINGHOUSE_PERSISTENCE_SQL);
 
-        if (!persistence.equalsIgnoreCase(LOGGINGHOUSE_PERSISTENCE_SQL))
+        if (!persistence.equalsIgnoreCase(LOGGINGHOUSE_PERSISTENCE_SQL)) {
             return;
+        }
 
         var flywayService = new FlywayService(
                 context.getMonitor(),
