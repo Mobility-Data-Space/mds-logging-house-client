@@ -18,17 +18,31 @@ public class ConfigConstants {
 
     static final String LOGGINGHOUSE_ENABLED_SETTING = "edc.logginghouse.extension.enabled";
 
+    static final boolean LOGGINGHOUSE_ENABLED_DEFAULT = true;
+
     static final String LOGGINGHOUSE_URL_SETTING = "edc.logginghouse.extension.url";
 
     static final String LOGGINGHOUSE_RETRY_LIMIT_SETTING = "edc.logginghouse.extension.retryLimit";
 
+    static final int LOGGINGHOUSE_RETRY_LIMIT_DEFAULT = 10;
+
     static final String LOGGINGHOUSE_FLYWAY_REPAIR_SETTING = "edc.logginghouse.extension.flyway.repair";
+
+    static final boolean LOGGINGHOUSE_FLYWAY_REPAIR_DEFAULT = false;
 
     static final String LOGGINGHOUSE_FLYWAY_CLEAN_SETTING = "edc.logginghouse.extension.flyway.clean";
 
-    static final String LOGGINGHOUSE_EXTENSION_MAX_WORKERS = "edc.logginghouse.extension.workers.max";
+    static final boolean LOGGINGHOUSE_FLYWAY_CLEAN_DEFAULT = false;
 
-    static final String LOGGINGHOUSE_EXTENSION_WORKERS_DELAY = "edc.logginghouse.extension.workers.delay";
+    static final String LOGGINGHOUSE_EXTENSION_MAX_WORKERS_SETTING = "edc.logginghouse.extension.workers.max";
 
-    static final String LOGGINGHOUSE_EXTENSION_WORKERS_PERIOD = "edc.logginghouse.extension.workers.period";
+    static final int LOGGINGHOUSE_EXTENSION_MAX_WORKERS_DEFAULT = 1;
+
+    static final String LOGGINGHOUSE_EXTENSION_WORKERS_DELAY_SETTING = "edc.logginghouse.extension.workers.delay";
+
+    static final int LOGGINGHOUSE_EXTENSION_WORKERS_DELAY_DEFAULT = 10;
+
+    static final String LOGGINGHOUSE_EXTENSION_WORKERS_PERIOD_SETTING = "edc.logginghouse.extension.workers.period";
+
+    static final int LOGGINGHOUSE_EXTENSION_WORKERS_PERIOD_DEFAULT = 30;
 }

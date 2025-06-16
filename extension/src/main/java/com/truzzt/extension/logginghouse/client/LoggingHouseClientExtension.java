@@ -69,12 +69,19 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.UUID;
 
+import static com.truzzt.extension.logginghouse.client.ConfigConstants.LOGGINGHOUSE_ENABLED_DEFAULT;
 import static com.truzzt.extension.logginghouse.client.ConfigConstants.LOGGINGHOUSE_ENABLED_SETTING;
-import static com.truzzt.extension.logginghouse.client.ConfigConstants.LOGGINGHOUSE_EXTENSION_MAX_WORKERS;
-import static com.truzzt.extension.logginghouse.client.ConfigConstants.LOGGINGHOUSE_EXTENSION_WORKERS_DELAY;
-import static com.truzzt.extension.logginghouse.client.ConfigConstants.LOGGINGHOUSE_EXTENSION_WORKERS_PERIOD;
+import static com.truzzt.extension.logginghouse.client.ConfigConstants.LOGGINGHOUSE_EXTENSION_MAX_WORKERS_DEFAULT;
+import static com.truzzt.extension.logginghouse.client.ConfigConstants.LOGGINGHOUSE_EXTENSION_MAX_WORKERS_SETTING;
+import static com.truzzt.extension.logginghouse.client.ConfigConstants.LOGGINGHOUSE_EXTENSION_WORKERS_DELAY_DEFAULT;
+import static com.truzzt.extension.logginghouse.client.ConfigConstants.LOGGINGHOUSE_EXTENSION_WORKERS_DELAY_SETTING;
+import static com.truzzt.extension.logginghouse.client.ConfigConstants.LOGGINGHOUSE_EXTENSION_WORKERS_PERIOD_DEFAULT;
+import static com.truzzt.extension.logginghouse.client.ConfigConstants.LOGGINGHOUSE_EXTENSION_WORKERS_PERIOD_SETTING;
+import static com.truzzt.extension.logginghouse.client.ConfigConstants.LOGGINGHOUSE_FLYWAY_CLEAN_DEFAULT;
 import static com.truzzt.extension.logginghouse.client.ConfigConstants.LOGGINGHOUSE_FLYWAY_CLEAN_SETTING;
+import static com.truzzt.extension.logginghouse.client.ConfigConstants.LOGGINGHOUSE_FLYWAY_REPAIR_DEFAULT;
 import static com.truzzt.extension.logginghouse.client.ConfigConstants.LOGGINGHOUSE_FLYWAY_REPAIR_SETTING;
+import static com.truzzt.extension.logginghouse.client.ConfigConstants.LOGGINGHOUSE_RETRY_LIMIT_DEFAULT;
 import static com.truzzt.extension.logginghouse.client.ConfigConstants.LOGGINGHOUSE_RETRY_LIMIT_SETTING;
 import static com.truzzt.extension.logginghouse.client.ConfigConstants.LOGGINGHOUSE_URL_SETTING;
 import static com.truzzt.extension.logginghouse.client.multipart.ExtendedMessageProtocolClearing.IDS_EXTENDED_PROTOCOL_CLEARING;
@@ -146,7 +153,7 @@ public class LoggingHouseClientExtension implements ServiceExtension {
     public void initialize(ServiceExtensionContext context) {
         monitor = context.getMonitor();
 
-        var extensionEnabled = context.getSetting(LOGGINGHOUSE_ENABLED_SETTING, true);
+        var extensionEnabled = context.getSetting(LOGGINGHOUSE_ENABLED_SETTING, LOGGINGHOUSE_ENABLED_DEFAULT);
         if (!extensionEnabled) {
             enabled = false;
             monitor.info("LoggingHouseClientExtension is disabled.");
@@ -189,8 +196,8 @@ public class LoggingHouseClientExtension implements ServiceExtension {
     private void runFlywayMigrations(ServiceExtensionContext context) {
         var flywayService = new FlywayService(
                 context.getMonitor(),
-                context.getSetting(LOGGINGHOUSE_FLYWAY_REPAIR_SETTING, false),
-                context.getSetting(LOGGINGHOUSE_FLYWAY_CLEAN_SETTING, false)
+                context.getSetting(LOGGINGHOUSE_FLYWAY_REPAIR_SETTING, LOGGINGHOUSE_FLYWAY_REPAIR_DEFAULT),
+                context.getSetting(LOGGINGHOUSE_FLYWAY_CLEAN_SETTING, LOGGINGHOUSE_FLYWAY_CLEAN_DEFAULT)
         );
         var migrationManager = new DatabaseMigrationManager(context.getConfig(), context.getMonitor(), flywayService);
         migrationManager.migrate();
@@ -257,12 +264,12 @@ public class LoggingHouseClientExtension implements ServiceExtension {
     }
 
     private LoggingHouseWorkersManager initializeWorkersManager(ServiceExtensionContext context, LoggingHouseMessageStore store) {
-        var initialDelaySeconds = context.getSetting(LOGGINGHOUSE_EXTENSION_WORKERS_DELAY, 30);
-        var periodSeconds = context.getSetting(LOGGINGHOUSE_EXTENSION_WORKERS_PERIOD, 10);
+        var initialDelaySeconds = context.getSetting(LOGGINGHOUSE_EXTENSION_WORKERS_DELAY_SETTING, LOGGINGHOUSE_EXTENSION_WORKERS_DELAY_DEFAULT);
+        var periodSeconds = context.getSetting(LOGGINGHOUSE_EXTENSION_WORKERS_PERIOD_SETTING, LOGGINGHOUSE_EXTENSION_WORKERS_PERIOD_DEFAULT);
         var executor = new WorkersExecutor(Duration.ofSeconds(periodSeconds), Duration.ofSeconds(initialDelaySeconds), monitor);
 
-        var maxWorkers = context.getSetting(LOGGINGHOUSE_EXTENSION_MAX_WORKERS, 1);
-        var retriesLimit = context.getSetting(LOGGINGHOUSE_RETRY_LIMIT_SETTING, 10);
+        var maxWorkers = context.getSetting(LOGGINGHOUSE_EXTENSION_MAX_WORKERS_SETTING, LOGGINGHOUSE_EXTENSION_MAX_WORKERS_DEFAULT);
+        var retriesLimit = context.getSetting(LOGGINGHOUSE_RETRY_LIMIT_SETTING, LOGGINGHOUSE_RETRY_LIMIT_DEFAULT);
 
         return new LoggingHouseWorkersManager(participantId, executor, monitor, maxWorkers, retriesLimit, store, dispatcherRegistry, hostname, loggingHouseLogUrl);
     }
