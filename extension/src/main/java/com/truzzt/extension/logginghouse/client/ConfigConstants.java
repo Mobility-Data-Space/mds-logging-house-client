@@ -20,11 +20,12 @@ public class ConfigConstants {
 
     static final boolean LOGGINGHOUSE_ENABLED_DEFAULT = true;
 
+    static final String LOGGINGHOUSE_PERSISTENCE_SETTING = "edc.logginghouse.extension.persistence";
+
+    static final String LOGGINGHOUSE_PERSISTENCE_SQL = "sql";
+    static final String LOGGINGHOUSE_PERSISTENCE_IN_MEMORY = "memory";
+
     static final String LOGGINGHOUSE_URL_SETTING = "edc.logginghouse.extension.url";
-
-    static final String LOGGINGHOUSE_RETRY_LIMIT_SETTING = "edc.logginghouse.extension.retryLimit";
-
-    static final int LOGGINGHOUSE_RETRY_LIMIT_DEFAULT = 10;
 
     static final String LOGGINGHOUSE_FLYWAY_REPAIR_SETTING = "edc.logginghouse.extension.flyway.repair";
 
@@ -45,4 +46,8 @@ public class ConfigConstants {
     static final String LOGGINGHOUSE_EXTENSION_WORKERS_PERIOD_SETTING = "edc.logginghouse.extension.workers.period";
 
     static final int LOGGINGHOUSE_EXTENSION_WORKERS_PERIOD_DEFAULT = 30;
+
+    static final String LOGGINGHOUSE_RETRY_LIMIT_SETTING = "edc.logginghouse.extension.retryLimit";
+
+    static final int LOGGINGHOUSE_RETRY_LIMIT_DEFAULT = 10;
 }
