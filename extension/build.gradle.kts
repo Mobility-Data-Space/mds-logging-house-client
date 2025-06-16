@@ -6,10 +6,9 @@ plugins {
 dependencies {
     implementation(libs.edc.control.plane.spi)
     implementation(libs.edc.http.spi)
-
-    implementation(libs.edc.sql.core)
-    implementation(libs.edc.sql.lib)
     implementation(libs.edc.transaction.datasource.spi)
+
+    implementation(libs.edc.sql.lib)
 
     implementation(libs.okhttp)
     implementation(libs.json)

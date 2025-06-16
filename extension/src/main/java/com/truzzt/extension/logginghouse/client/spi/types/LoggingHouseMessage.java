@@ -29,6 +29,7 @@ public class LoggingHouseMessage {
     private LoggingHouseMessageStatus status;
     private ZonedDateTime createdAt;
     private int retries;
+    private String receipt;
 
     public Long getId() {
         return id;
@@ -62,6 +63,22 @@ public class LoggingHouseMessage {
     }
     public int getRetries() {
         return retries;
+    }
+    public String getReceipt() {
+        return receipt;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+    public void setStatus(LoggingHouseMessageStatus status) {
+        this.status = status;
+    }
+    public void setRetries(int retries) {
+        this.retries = retries;
+    }
+    public void setReceipt(String receipt) {
+        this.receipt = receipt;
     }
 
     public static final class Builder {

@@ -9,11 +9,17 @@ postgresql = "42.4.5"
 flyway = "9.0.1"
 
 [libraries]
+edc-controlplane-base-bom = { module = "org.eclipse.edc:controlplane-base-bom", version.ref = "edc" }
+edc-controlplane-feature-sql-bom = { module = "org.eclipse.edc:controlplane-feature-sql-bom", version.ref = "edc" }
+edc-dataplane-base-bom = { module = "org.eclipse.edc:dataplane-base-bom", version.ref = "edc" }
+edc-dataplane-feature-sql-bom = { module = "org.eclipse.edc:dataplane-feature-sql-bom", version.ref = "edc" }
 edc-control-plane-spi = { module = "org.eclipse.edc:control-plane-spi", version.ref = "edc" }
 edc-http-spi = { module = "org.eclipse.edc:http-spi", version.ref = "edc" }
-edc-sql-core = { module = "org.eclipse.edc:sql-core", version.ref = "edc" }
-edc-sql-lib = { module = "org.eclipse.edc:sql-lib", version.ref = "edc" }
 edc-transaction-datasource-spi = { module = "org.eclipse.edc:transaction-datasource-spi", version.ref = "edc" }
+edc-sql-lib = { module = "org.eclipse.edc:sql-lib", version.ref = "edc" }
+edc-oauth2-daps = { module = "org.eclipse.edc:oauth2-daps", version.ref = "edc" }
+edc-oauth2-service = { module = "org.eclipse.edc:oauth2-service", version.ref = "edc" }
+edc-vault-hashicorp = { module = "org.eclipse.edc:vault-hashicorp", version.ref = "edc" }
 
 infomodel-java = { module = "de.fraunhofer.iais.eis.ids.infomodel:infomodel-java", version.ref = "infomodel" }
 infomodel-util = { module = "de.fraunhofer.iais.eis.ids.infomodel:infomodel-util", version.ref = "infomodel" }
