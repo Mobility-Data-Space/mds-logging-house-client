@@ -39,7 +39,7 @@ Give a ⭐️ if this project helped you!
 
 ## 📝 License
 
-Copyright © 2024 [truzzt](https://truzzt.eu).<br />
+Copyright © 2024 [Mobility Data Space](https://mobility-dataspace.eu).<br />
 This project is [Apache 2.0](https://github.com/Mobility-Data-Space/mds-logging-house-client/blob/main/LICENSE) licensed.
 
 ***
