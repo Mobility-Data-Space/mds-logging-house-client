@@ -16,38 +16,35 @@ package com.truzzt.extension.logginghouse.client;
 
 public class ConfigConstants {
 
-    static final String LOGGINGHOUSE_ENABLED_SETTING = "edc.logginghouse.extension.enabled";
+    public static final String LOGGINGHOUSE_ENABLED_SETTING = "edc.logginghouse.extension.enabled";
 
-    static final boolean LOGGINGHOUSE_ENABLED_DEFAULT = true;
+    public static final boolean LOGGINGHOUSE_ENABLED_DEFAULT = true;
 
-    static final String LOGGINGHOUSE_PERSISTENCE_SETTING = "edc.logginghouse.extension.persistence";
+    public static final String LOGGINGHOUSE_PERSISTENCE_SETTING = "edc.logginghouse.extension.persistence";
 
-    static final String LOGGINGHOUSE_PERSISTENCE_SQL = "sql";
-    static final String LOGGINGHOUSE_PERSISTENCE_IN_MEMORY = "memory";
+    public static final String LOGGINGHOUSE_PERSISTENCE_SQL = "sql";
+    public static final String LOGGINGHOUSE_PERSISTENCE_IN_MEMORY = "memory";
 
-    static final String LOGGINGHOUSE_URL_SETTING = "edc.logginghouse.extension.url";
+    public static final String DATASOURCE_NAME_SETTING = "edc.datasource.logginghouse.name";
 
-    static final String LOGGINGHOUSE_FLYWAY_REPAIR_SETTING = "edc.logginghouse.extension.flyway.repair";
+    public static final String LOGGINGHOUSE_URL_SETTING = "edc.logginghouse.extension.url";
 
-    static final boolean LOGGINGHOUSE_FLYWAY_REPAIR_DEFAULT = false;
+    public static final String LOGGINGHOUSE_FLYWAY_REPAIR_SETTING = "edc.logginghouse.extension.flyway.repair";
+    public static final boolean LOGGINGHOUSE_FLYWAY_REPAIR_DEFAULT = false;
 
-    static final String LOGGINGHOUSE_FLYWAY_CLEAN_SETTING = "edc.logginghouse.extension.flyway.clean";
+    public static final String LOGGINGHOUSE_FLYWAY_CLEAN_SETTING = "edc.logginghouse.extension.flyway.clean";
+    public static final boolean LOGGINGHOUSE_FLYWAY_CLEAN_DEFAULT = false;
 
-    static final boolean LOGGINGHOUSE_FLYWAY_CLEAN_DEFAULT = false;
+    public static final String LOGGINGHOUSE_EXTENSION_MAX_WORKERS_SETTING = "edc.logginghouse.extension.workers.max";
+    public static final int LOGGINGHOUSE_EXTENSION_MAX_WORKERS_DEFAULT = 1;
 
-    static final String LOGGINGHOUSE_EXTENSION_MAX_WORKERS_SETTING = "edc.logginghouse.extension.workers.max";
+    public static final String LOGGINGHOUSE_EXTENSION_WORKERS_DELAY_SETTING = "edc.logginghouse.extension.workers.delay";
+    public static final int LOGGINGHOUSE_EXTENSION_WORKERS_DELAY_DEFAULT = 10;
 
-    static final int LOGGINGHOUSE_EXTENSION_MAX_WORKERS_DEFAULT = 1;
+    public static final String LOGGINGHOUSE_EXTENSION_WORKERS_PERIOD_SETTING = "edc.logginghouse.extension.workers.period";
+    public static final int LOGGINGHOUSE_EXTENSION_WORKERS_PERIOD_DEFAULT = 30;
 
-    static final String LOGGINGHOUSE_EXTENSION_WORKERS_DELAY_SETTING = "edc.logginghouse.extension.workers.delay";
+    public static final String LOGGINGHOUSE_RETRY_LIMIT_SETTING = "edc.logginghouse.extension.retryLimit";
 
-    static final int LOGGINGHOUSE_EXTENSION_WORKERS_DELAY_DEFAULT = 10;
-
-    static final String LOGGINGHOUSE_EXTENSION_WORKERS_PERIOD_SETTING = "edc.logginghouse.extension.workers.period";
-
-    static final int LOGGINGHOUSE_EXTENSION_WORKERS_PERIOD_DEFAULT = 30;
-
-    static final String LOGGINGHOUSE_RETRY_LIMIT_SETTING = "edc.logginghouse.extension.retryLimit";
-
-    static final int LOGGINGHOUSE_RETRY_LIMIT_DEFAULT = 10;
+    public static final int LOGGINGHOUSE_RETRY_LIMIT_DEFAULT = 10;
 }
