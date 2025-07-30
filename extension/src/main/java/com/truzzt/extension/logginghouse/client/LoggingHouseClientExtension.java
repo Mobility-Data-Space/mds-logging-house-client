@@ -320,7 +320,7 @@ public class LoggingHouseClientExtension implements ServiceExtension {
     private LoggingHouseWorkersManager initializeWorkersManager(ServiceExtensionContext context, LoggingHouseMessageStore store) {
         var initialDelaySeconds = context.getSetting(LOGGINGHOUSE_EXTENSION_WORKERS_DELAY_SETTING, LOGGINGHOUSE_EXTENSION_WORKERS_DELAY_DEFAULT);
         var periodSeconds = context.getSetting(LOGGINGHOUSE_EXTENSION_WORKERS_PERIOD_SETTING, LOGGINGHOUSE_EXTENSION_WORKERS_PERIOD_DEFAULT);
-        var executor = new WorkersExecutor(Duration.ofSeconds(initialDelaySeconds), Duration.ofSeconds(periodSeconds), monitor);
+        var executor = new WorkersExecutor(Duration.ofSeconds(periodSeconds), Duration.ofSeconds(initialDelaySeconds), monitor);
 
         var maxWorkers = context.getSetting(LOGGINGHOUSE_EXTENSION_MAX_WORKERS_SETTING, LOGGINGHOUSE_EXTENSION_MAX_WORKERS_DEFAULT);
         var retriesLimit = context.getSetting(LOGGINGHOUSE_RETRY_LIMIT_SETTING, LOGGINGHOUSE_RETRY_LIMIT_DEFAULT);
