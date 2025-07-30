@@ -20,19 +20,21 @@ import org.eclipse.edc.spi.monitor.Monitor;
 import org.eclipse.edc.spi.system.configuration.Config;
 
 public class DatabaseMigrationManager {
+    private final String datasource;
     private final Config config;
     private final Monitor monitor;
     private final FlywayService flywayService;
 
-    public DatabaseMigrationManager(Config config, Monitor monitor, FlywayService flywayService) {
+    public DatabaseMigrationManager(String datasource, Config config, Monitor monitor, FlywayService flywayService) {
+        this.datasource = datasource;
         this.config = config;
         this.monitor = monitor;
         this.flywayService = flywayService;
     }
 
     public void migrate() {
-        var datasourceProperties = new DatasourceProperties(config);
-        monitor.info("Using datasource %s to apply flyway migrations".formatted(DatasourceProperties.LOGGING_HOUSE_DATASOURCE));
+        var datasourceProperties = new DatasourceProperties(datasource, config);
+        monitor.info("Using datasource [%s] to apply flyway migrations".formatted(datasourceProperties.getName()));
 
         flywayService.cleanDatabase(datasourceProperties);
         flywayService.migrateDatabase(datasourceProperties);
