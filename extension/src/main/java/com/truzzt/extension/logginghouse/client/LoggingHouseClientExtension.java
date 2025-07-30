@@ -20,7 +20,6 @@ import com.truzzt.extension.logginghouse.client.events.LoggingHouseEventSubscrib
 import com.truzzt.extension.logginghouse.client.events.messages.CreateProcessMessageSender;
 import com.truzzt.extension.logginghouse.client.events.messages.LogMessageSender;
 import com.truzzt.extension.logginghouse.client.flyway.FlywayService;
-import com.truzzt.extension.logginghouse.client.flyway.connection.DatasourceProperties;
 import com.truzzt.extension.logginghouse.client.flyway.migration.DatabaseMigrationManager;
 import com.truzzt.extension.logginghouse.client.multipart.IdsMultipartClearingRemoteMessageDispatcher;
 import com.truzzt.extension.logginghouse.client.multipart.MultiContextJsonLdSerializer;
@@ -70,6 +69,7 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.UUID;
 
+import static com.truzzt.extension.logginghouse.client.ConfigConstants.DATASOURCE_NAME_SETTING;
 import static com.truzzt.extension.logginghouse.client.ConfigConstants.LOGGINGHOUSE_ENABLED_DEFAULT;
 import static com.truzzt.extension.logginghouse.client.ConfigConstants.LOGGINGHOUSE_ENABLED_SETTING;
 import static com.truzzt.extension.logginghouse.client.ConfigConstants.LOGGINGHOUSE_EXTENSION_MAX_WORKERS_DEFAULT;
@@ -116,6 +116,8 @@ public class LoggingHouseClientExtension implements ServiceExtension {
     private Hostname hostname;
 
     @Inject
+    private Monitor monitor;
+    @Inject
     private TypeManager typeManager;
     @Inject
     private EventRouter eventRouter;
@@ -138,11 +140,13 @@ public class LoggingHouseClientExtension implements ServiceExtension {
     @Inject
     private AssetIndex assetIndex;
 
-    public Monitor monitor;
     private boolean enabled;
     private URL loggingHouseLogUrl;
-    private LoggingHouseWorkersManager workersManager;
+    private String datasourceName;
     private String participantId;
+
+    private DatabaseMigrationManager migrationManager;
+    private LoggingHouseWorkersManager workersManager;
 
     @Override
     public String name() {
@@ -151,16 +155,16 @@ public class LoggingHouseClientExtension implements ServiceExtension {
 
     @Override
     public void initialize(ServiceExtensionContext context) {
-        monitor = context.getMonitor();
-
         enabled = isEnabled(context);
         if (!enabled) {
             return;
         }
 
         loggingHouseLogUrl = readUrlFromSettings(context);
+        datasourceName = context.getSetting(DATASOURCE_NAME_SETTING, DataSourceRegistry.DEFAULT_DATASOURCE);
+        participantId = context.getParticipantId();
 
-        runFlywayMigrations(context);
+        migrationManager = initFlyway(context);
 
         registerSerializerClearingHouseMessages(context);
 
@@ -169,8 +173,35 @@ public class LoggingHouseClientExtension implements ServiceExtension {
 
         registerDispatcher(context);
         workersManager = initializeWorkersManager(context, store);
+    }
 
-        participantId = context.getParticipantId();
+    @Override
+    public void start() {
+        if (!enabled) {
+            monitor.info("Skipping start of Logginghouse client extension (disabled).");
+        } else {
+
+            monitor.info("Running Flyway migrations.");
+            migrationManager.migrate();
+
+            monitor.info("Starting Logginghouse client extension.");
+            workersManager.execute();
+
+            // Sending a hello message to LoggingHouse
+            monitor.info("Sending Hello Message to LoggingHouse.");
+            var currentTime = System.currentTimeMillis();
+            ConnectorAvailableEvent connectorAvailableEvent = new ConnectorAvailableEvent(
+                    UUID.randomUUID().toString(),
+                    participantId,
+                    "{\"message\": \"Hello Logginghouse\", \"connectorStartDate\": " + currentTime + "}"
+            );
+            var eventEnvelope = EventEnvelope.Builder.newInstance()
+                    .at(currentTime)
+                    .payload(connectorAvailableEvent)
+                    .build();
+            eventRouter.publish(eventEnvelope);
+            monitor.debug("'Hello Logginghouse' Event published.");
+        }
     }
 
     private boolean isEnabled(ServiceExtensionContext context) {
@@ -199,11 +230,11 @@ public class LoggingHouseClientExtension implements ServiceExtension {
         }
     }
 
-    private void runFlywayMigrations(ServiceExtensionContext context) {
+    private DatabaseMigrationManager initFlyway(ServiceExtensionContext context) {
         var persistence = context.getSetting(LOGGINGHOUSE_PERSISTENCE_SETTING, LOGGINGHOUSE_PERSISTENCE_SQL);
 
         if (!persistence.equalsIgnoreCase(LOGGINGHOUSE_PERSISTENCE_SQL)) {
-            return;
+            return null;
         }
 
         var flywayService = new FlywayService(
@@ -211,8 +242,8 @@ public class LoggingHouseClientExtension implements ServiceExtension {
                 context.getSetting(LOGGINGHOUSE_FLYWAY_REPAIR_SETTING, LOGGINGHOUSE_FLYWAY_REPAIR_DEFAULT),
                 context.getSetting(LOGGINGHOUSE_FLYWAY_CLEAN_SETTING, LOGGINGHOUSE_FLYWAY_CLEAN_DEFAULT)
         );
-        var migrationManager = new DatabaseMigrationManager(context.getConfig(), context.getMonitor(), flywayService);
-        migrationManager.migrate();
+
+        return new DatabaseMigrationManager(datasourceName, context.getConfig(), context.getMonitor(), flywayService);
     }
 
     private LoggingHouseMessageStore initializeLoggingHouseMessageStore(ServiceExtensionContext context, TypeManager typeManager) {
@@ -223,7 +254,7 @@ public class LoggingHouseClientExtension implements ServiceExtension {
 
             return new SqlLoggingHouseMessageStore(
                     dataSourceRegistry,
-                    DatasourceProperties.LOGGING_HOUSE_DATASOURCE,
+                    datasourceName,
                     transactionContext,
                     typeManager.getMapper(),
                     new PostgresDialectStatements(),
@@ -289,7 +320,7 @@ public class LoggingHouseClientExtension implements ServiceExtension {
     private LoggingHouseWorkersManager initializeWorkersManager(ServiceExtensionContext context, LoggingHouseMessageStore store) {
         var initialDelaySeconds = context.getSetting(LOGGINGHOUSE_EXTENSION_WORKERS_DELAY_SETTING, LOGGINGHOUSE_EXTENSION_WORKERS_DELAY_DEFAULT);
         var periodSeconds = context.getSetting(LOGGINGHOUSE_EXTENSION_WORKERS_PERIOD_SETTING, LOGGINGHOUSE_EXTENSION_WORKERS_PERIOD_DEFAULT);
-        var executor = new WorkersExecutor(Duration.ofSeconds(initialDelaySeconds), Duration.ofSeconds(periodSeconds), monitor);
+        var executor = new WorkersExecutor(Duration.ofSeconds(periodSeconds), Duration.ofSeconds(initialDelaySeconds), monitor);
 
         var maxWorkers = context.getSetting(LOGGINGHOUSE_EXTENSION_MAX_WORKERS_SETTING, LOGGINGHOUSE_EXTENSION_MAX_WORKERS_DEFAULT);
         var retriesLimit = context.getSetting(LOGGINGHOUSE_RETRY_LIMIT_SETTING, LOGGINGHOUSE_RETRY_LIMIT_DEFAULT);
@@ -314,36 +345,5 @@ public class LoggingHouseClientExtension implements ServiceExtension {
         dispatcher.register(createProcessMessageSender);
 
         dispatcherRegistry.register(IDS_EXTENDED_PROTOCOL_CLEARING, dispatcher);
-    }
-
-    @Override
-    public void start() {
-        if (!enabled) {
-            monitor.info("Skipping start of Logginghouse client extension (disabled).");
-        } else {
-            monitor.info("Starting Logginghouse client extension.");
-            workersManager.execute();
-
-
-            // Sending a hello message to LoggingHouse
-            monitor.info("Sending Hello Message to LoggingHouse.");
-            var currentTime = System.currentTimeMillis();
-            ConnectorAvailableEvent connectorAvailableEvent = new ConnectorAvailableEvent(
-                    UUID.randomUUID().toString(),
-                    participantId,
-                    "{\"message\": \"Hello Logginghouse\", \"connectorStartDate\": " + currentTime + "}"
-            );
-            var eventEnvelope = EventEnvelope.Builder.newInstance()
-                    .at(currentTime)
-                    .payload(connectorAvailableEvent)
-                    .build();
-            eventRouter.publish(eventEnvelope);
-            monitor.debug("'Hello Logginghouse' Event published.");
-        }
-    }
-
-    @Override
-    public void prepare() {
-        ServiceExtension.super.prepare();
     }
 }
