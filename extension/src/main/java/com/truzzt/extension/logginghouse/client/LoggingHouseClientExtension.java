@@ -176,14 +176,20 @@ public class LoggingHouseClientExtension implements ServiceExtension {
     }
 
     @Override
+    public void prepare() {
+        if (!enabled) {
+            monitor.info("Skipping prepare of Logginghouse client extension (disabled).");
+        } else {
+            monitor.info("Running Flyway migrations.");
+            migrationManager.migrate();
+        }
+    }
+
+    @Override
     public void start() {
         if (!enabled) {
             monitor.info("Skipping start of Logginghouse client extension (disabled).");
         } else {
-
-            monitor.info("Running Flyway migrations.");
-            migrationManager.migrate();
-
             monitor.info("Starting Logginghouse client extension.");
             workersManager.execute();
 
