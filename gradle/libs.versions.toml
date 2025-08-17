@@ -6,6 +6,7 @@ json = "20231013"
 jackson = "2.18.2"
 jersey = "3.1.3"
 postgresql = "42.4.5"
+tractusx-edc = "0.9.0"
 flyway = "9.0.1"
 
 [libraries]
@@ -20,6 +21,11 @@ edc-sql-lib = { module = "org.eclipse.edc:sql-lib", version.ref = "edc" }
 edc-oauth2-daps = { module = "org.eclipse.edc:oauth2-daps", version.ref = "edc" }
 edc-oauth2-service = { module = "org.eclipse.edc:oauth2-service", version.ref = "edc" }
 edc-vault-hashicorp = { module = "org.eclipse.edc:vault-hashicorp", version.ref = "edc" }
+
+tractusx-edc-control-plane-migration = { module = "org.eclipse.tractusx.edc:control-plane-migration", version.ref = "tractusx-edc" }
+tractusx-edc-data-plane-migration = { module = "org.eclipse.tractusx.edc:data-plane-migration", version.ref = "tractusx-edc" }
+tractusx-edc-postgresql-migration = { module = "org.eclipse.tractusx.edc:postgresql-migration-lib", version.ref = "tractusx-edc" }
+tractusx-edc-retirement-evaluation-store-sql = { module = "org.eclipse.tractusx.edc:retirement-evaluation-store-sql", version.ref = "tractusx-edc" }
 
 infomodel-java = { module = "de.fraunhofer.iais.eis.ids.infomodel:infomodel-java", version.ref = "infomodel" }
 infomodel-util = { module = "de.fraunhofer.iais.eis.ids.infomodel:infomodel-util", version.ref = "infomodel" }
