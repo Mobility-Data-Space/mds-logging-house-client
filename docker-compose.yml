@@ -1,16 +1,42 @@
 services:
-  vault:
-    container_name: vault
+  vault_provider:
+    container_name: vault_provider
     image: hashicorp/vault:1.17.2
-    ports:
-      - "8200:8200"
     environment:
       VAULT_DEV_ROOT_TOKEN_ID: test-token
       VAULT_ADDR: http://127.0.0.1:8200
     cap_add:
       - IPC_LOCK
-    healthcheck:
-      test: [ "CMD", "sh", "-c", "sleep 1 && apk add --no-cache curl && curl --fail http://localhost:8200/v1/sys/health || exit 1" ]
-      interval: 30s
-      timeout: 10s
-      retries: 5
+    ports:
+      - "8200:8200"
+
+  vault_consumer:
+    container_name: vault_consumer
+    image: hashicorp/vault:1.17.2
+    environment:
+      VAULT_DEV_ROOT_TOKEN_ID: test-token
+      VAULT_ADDR: http://127.0.0.1:8200
+    cap_add:
+      - IPC_LOCK
+    ports:
+      - "9200:8200"
+
+  db_provider:
+    container_name: db_provider
+    image: postgres:17.4
+    environment:
+      POSTGRES_DB: provider
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "8432:5432"
+
+  db_consumer:
+    container_name: db_consumer
+    image: postgres:17.4
+    environment:
+      POSTGRES_DB: consumer
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "9432:5432"
