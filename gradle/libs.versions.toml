@@ -1,12 +1,12 @@
 [versions]
-edc = "0.13.0"
+edc = "0.14.0"
 infomodel = "1.0.2-basecamp"
 okhttp = "4.10.0"
 json = "20231013"
 jackson = "2.18.2"
 jersey = "3.1.3"
 postgresql = "42.4.5"
-tractusx-edc = "0.9.0"
+tractusx-edc = "0.11.0-RC2"
 flyway = "9.0.1"
 
 [libraries]
@@ -18,9 +18,12 @@ edc-control-plane-spi = { module = "org.eclipse.edc:control-plane-spi", version.
 edc-http-spi = { module = "org.eclipse.edc:http-spi", version.ref = "edc" }
 edc-transaction-datasource-spi = { module = "org.eclipse.edc:transaction-datasource-spi", version.ref = "edc" }
 edc-sql-lib = { module = "org.eclipse.edc:sql-lib", version.ref = "edc" }
-edc-oauth2-daps = { module = "org.eclipse.edc:oauth2-daps", version.ref = "edc" }
-edc-oauth2-service = { module = "org.eclipse.edc:oauth2-service", version.ref = "edc" }
 edc-vault-hashicorp = { module = "org.eclipse.edc:vault-hashicorp", version.ref = "edc" }
+
+# these deps have been removed from upstream and they are yet not available on mds-edc, since they are used only for the
+# launchers that are supposedly used for testing, we can ping them to the latest version for the time being
+edc-oauth2-daps = { module = "org.eclipse.edc:oauth2-daps", version = "0.13.2" }
+edc-oauth2-service = { module = "org.eclipse.edc:oauth2-service", version = "0.13.2" }
 
 tractusx-edc-control-plane-migration = { module = "org.eclipse.tractusx.edc:control-plane-migration", version.ref = "tractusx-edc" }
 tractusx-edc-data-plane-migration = { module = "org.eclipse.tractusx.edc:data-plane-migration", version.ref = "tractusx-edc" }
