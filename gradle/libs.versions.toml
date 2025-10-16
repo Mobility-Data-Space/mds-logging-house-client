@@ -1,5 +1,5 @@
 [versions]
-edc = "0.14.0"
+edc = "0.14.1"
 infomodel = "1.0.2-basecamp"
 okhttp = "4.10.0"
 json = "20231013"
