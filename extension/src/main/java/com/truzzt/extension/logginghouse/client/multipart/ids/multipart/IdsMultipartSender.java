@@ -155,16 +155,13 @@ public class IdsMultipartSender {
 
             if (response.isSuccessful()) {
                 try (var body = response.body()) {
-                    if (body == null) {
-                        throw new EdcException("Received an empty body response from connector");
-                    } else {
-                        var parts = extractResponseParts(body);
-                        var content = senderDelegate.getResponseContent(parts);
+                    var parts = extractResponseParts(body);
+                    var content = senderDelegate.getResponseContent(parts);
 
-                        checkResponseType(content, senderDelegate);
+                    checkResponseType(content, senderDelegate);
 
-                        return CompletableFuture.completedFuture(StatusResult.success(content.payload()));
-                    }
+                    return CompletableFuture.completedFuture(StatusResult.success(content.payload()));
+
                 } catch (Exception e) {
                     throw new EdcException("Error reading response body", e);
                 }
@@ -181,7 +178,7 @@ public class IdsMultipartSender {
                 .claims(SCOPE_CLAIM, IdsConstants.TOKEN_SCOPE)
                 .claims(AUDIENCE_CLAIM, recipientAddress)
                 .build();
-        return identityService.obtainClientCredentials(tokenParameters)
+        return identityService.obtainClientCredentials("ignored", tokenParameters)
                 .map(credentials -> new DynamicAttributeTokenBuilder()
                         ._tokenFormat_(TokenFormat.JWT)
                         ._tokenValue_(credentials.getToken())

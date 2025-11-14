@@ -1,5 +1,5 @@
 [versions]
-edc = "0.14.1"
+edc = "0.15.0-20251117-SNAPSHOT"
 infomodel = "1.0.2-basecamp"
 okhttp = "4.10.0"
 json = "20231013"
@@ -21,7 +21,7 @@ edc-sql-lib = { module = "org.eclipse.edc:sql-lib", version.ref = "edc" }
 edc-vault-hashicorp = { module = "org.eclipse.edc:vault-hashicorp", version.ref = "edc" }
 
 # these deps have been removed from upstream and they are yet not available on mds-edc, since they are used only for the
-# launchers that are supposedly used for testing, we can ping them to the latest version for the time being
+# launchers that are supposedly used for testing, we can pin them to the latest version for the time being
 edc-oauth2-daps = { module = "org.eclipse.edc:oauth2-daps", version = "0.13.2" }
 edc-oauth2-service = { module = "org.eclipse.edc:oauth2-service", version = "0.13.2" }
 

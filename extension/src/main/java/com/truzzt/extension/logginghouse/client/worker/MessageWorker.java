@@ -130,7 +130,7 @@ public class MessageWorker {
         monitor.info("Creating process in LoggingHouse with id: " + message.getProcessId());
         var logMessage = new CreateProcessMessage(participantId, loggingHouseUrl, connectorBaseUrl, message.getProcessId(), processOwners);
 
-        return dispatcherRegistry.dispatch(Object.class, logMessage);
+        return dispatcherRegistry.dispatch(participantId, Object.class, logMessage);
     }
 
     public CompletableFuture<StatusResult<LogMessageReceipt>> logMessage(LoggingHouseMessage message, URL clearingHouseLogUrl) {
@@ -138,7 +138,7 @@ public class MessageWorker {
         monitor.info("Logging message to LoggingHouse with type " + message.getEventType() + " and id " + message.getEventId());
         var logMessage = new LogMessage(participantId, clearingHouseLogUrl, connectorBaseUrl, message.getEventToLog());
 
-        return dispatcherRegistry.dispatch(LogMessageReceipt.class, logMessage);
+        return dispatcherRegistry.dispatch(participantId, LogMessageReceipt.class, logMessage);
     }
 
     private void retryMessage(LoggingHouseMessage message) {
