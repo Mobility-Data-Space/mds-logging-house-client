@@ -7,7 +7,7 @@ jackson = "2.20.1"
 jersey = "3.1.11"
 postgresql = "42.7.8"
 tractusx-edc = "0.11.0"
-flyway = "9.0.1"
+flyway = "11.17.0"
 
 [libraries]
 edc-controlplane-base-bom = { module = "org.eclipse.edc:controlplane-base-bom", version.ref = "edc" }
