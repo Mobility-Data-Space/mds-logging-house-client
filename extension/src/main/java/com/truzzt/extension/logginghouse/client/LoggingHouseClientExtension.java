@@ -49,6 +49,7 @@ import org.eclipse.edc.http.spi.EdcHttpClient;
 import org.eclipse.edc.runtime.metamodel.annotation.Extension;
 import org.eclipse.edc.runtime.metamodel.annotation.Inject;
 import org.eclipse.edc.runtime.metamodel.annotation.Requires;
+import org.eclipse.edc.runtime.metamodel.annotation.Setting;
 import org.eclipse.edc.spi.EdcException;
 import org.eclipse.edc.spi.event.EventEnvelope;
 import org.eclipse.edc.spi.event.EventRouter;
@@ -112,9 +113,11 @@ public class LoggingHouseClientExtension implements ServiceExtension {
             "ids", "https://w3id.org/idsa/core/",
             "idsc", "https://w3id.org/idsa/code/");
 
+    @Setting(key = "edc.participant.id")
+    private String participantId;
+
     @Inject
     private Hostname hostname;
-
     @Inject
     private Monitor monitor;
     @Inject
@@ -143,7 +146,6 @@ public class LoggingHouseClientExtension implements ServiceExtension {
     private boolean enabled;
     private URL loggingHouseLogUrl;
     private String datasourceName;
-    private String participantId;
 
     private DatabaseMigrationManager migrationManager;
     private LoggingHouseWorkersManager workersManager;
@@ -162,7 +164,6 @@ public class LoggingHouseClientExtension implements ServiceExtension {
 
         loggingHouseLogUrl = readUrlFromSettings(context);
         datasourceName = context.getSetting(DATASOURCE_NAME_SETTING, DataSourceRegistry.DEFAULT_DATASOURCE);
-        participantId = context.getParticipantId();
 
         migrationManager = initFlyway(context);
 
@@ -219,7 +220,6 @@ public class LoggingHouseClientExtension implements ServiceExtension {
         }
         return enabled;
     }
-
 
     private URL readUrlFromSettings(ServiceExtensionContext context) {
         try {

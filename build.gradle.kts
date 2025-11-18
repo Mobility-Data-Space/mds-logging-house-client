@@ -30,6 +30,7 @@ allprojects {
 
     repositories {
         mavenCentral()
+        maven("https://central.sonatype.com/repository/maven-snapshots/")
         mavenLocal()
         maven {
             url = uri("https://maven.pkg.github.com/ids-basecamp/ids-infomodel-java")

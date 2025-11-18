@@ -47,7 +47,7 @@ public class IdsMultipartRemoteMessageDispatcher implements RemoteMessageDispatc
     }
 
     @Override
-    public <T, M extends RemoteMessage> CompletableFuture<StatusResult<T>> dispatch(Class<T> responseType, M message) {
+    public <T, M extends RemoteMessage> CompletableFuture<StatusResult<T>> dispatch(String participantId, Class<T> responseType, M message) {
         Objects.requireNonNull(message, "Message was null");
 
         if (unsupportedMessages.stream().anyMatch(it -> it.isInstance(message))) { // these messages are not supposed to be sent on ids-multipart.
