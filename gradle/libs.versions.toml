@@ -1,7 +1,7 @@
 [versions]
 edc = "0.15.0-20251117-SNAPSHOT"
 infomodel = "1.0.2-basecamp"
-okhttp = "4.10.0"
+okhttp = "5.3.2"
 json = "20231013"
 jackson = "2.20.1"
 jersey = "3.1.11"
