@@ -15,18 +15,31 @@
 package com.truzzt.extension.logginghouse.client.events.messages;
 
 import com.truzzt.extension.logginghouse.client.multipart.ExtendedMessageProtocolClearing;
-import org.eclipse.edc.spi.types.domain.message.RemoteMessage;
+import org.eclipse.edc.spi.types.domain.message.ProtocolRemoteMessage;
 
 import java.net.URI;
 import java.net.URL;
 import java.util.List;
 
-public record CreateProcessMessage(String counterPartyId,
-        URL clearingHouseLogUrl,
-        URI connectorBaseUrl,
-        String processId,
-        List<String> processOwners
-) implements RemoteMessage {
+public final class CreateProcessMessage extends ProtocolRemoteMessage {
+    private final String counterPartyId;
+    private final URL clearingHouseLogUrl;
+    private final URI connectorBaseUrl;
+    private final String processId;
+    private final List<String> processOwners;
+
+    public CreateProcessMessage(String counterPartyId,
+                                URL clearingHouseLogUrl,
+                                URI connectorBaseUrl,
+                                String processId,
+                                List<String> processOwners
+    ) {
+        this.counterPartyId = counterPartyId;
+        this.clearingHouseLogUrl = clearingHouseLogUrl;
+        this.connectorBaseUrl = connectorBaseUrl;
+        this.processId = processId;
+        this.processOwners = processOwners;
+    }
 
     @Override
     public String getProtocol() {
@@ -42,4 +55,17 @@ public record CreateProcessMessage(String counterPartyId,
     public String getCounterPartyId() {
         return counterPartyId;
     }
+
+    public URI getConnectorBaseUrl() {
+        return connectorBaseUrl;
+    }
+
+    public String getProcessId() {
+        return processId;
+    }
+
+    public List<String> getProcessOwners() {
+        return processOwners;
+    }
+
 }

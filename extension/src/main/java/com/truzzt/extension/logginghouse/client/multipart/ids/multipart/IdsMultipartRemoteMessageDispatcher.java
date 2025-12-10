@@ -20,6 +20,7 @@ import org.eclipse.edc.connector.controlplane.transfer.spi.types.protocol.Transf
 import org.eclipse.edc.spi.EdcException;
 import org.eclipse.edc.spi.message.RemoteMessageDispatcher;
 import org.eclipse.edc.spi.response.StatusResult;
+import org.eclipse.edc.spi.types.domain.message.ProtocolRemoteMessage;
 import org.eclipse.edc.spi.types.domain.message.RemoteMessage;
 
 import java.util.HashMap;
@@ -28,7 +29,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
-public class IdsMultipartRemoteMessageDispatcher implements RemoteMessageDispatcher {
+public class IdsMultipartRemoteMessageDispatcher implements RemoteMessageDispatcher<ProtocolRemoteMessage> {
 
     private final IdsMultipartSender multipartSender;
     private final Map<Class<? extends RemoteMessage>, MultipartSenderDelegate<? extends RemoteMessage, ?>> delegates = new HashMap<>();
@@ -47,7 +48,7 @@ public class IdsMultipartRemoteMessageDispatcher implements RemoteMessageDispatc
     }
 
     @Override
-    public <T, M extends RemoteMessage> CompletableFuture<StatusResult<T>> dispatch(String participantId, Class<T> responseType, M message) {
+    public <T, M extends ProtocolRemoteMessage> CompletableFuture<StatusResult<T>> dispatch(String participantContextId, Class<T> responseType, M message) {
         Objects.requireNonNull(message, "Message was null");
 
         if (unsupportedMessages.stream().anyMatch(it -> it.isInstance(message))) { // these messages are not supposed to be sent on ids-multipart.
@@ -61,5 +62,4 @@ public class IdsMultipartRemoteMessageDispatcher implements RemoteMessageDispatc
 
         return multipartSender.send(message, delegate);
     }
-
 }

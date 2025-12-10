@@ -16,15 +16,26 @@
 package com.truzzt.extension.logginghouse.client.events.messages;
 
 import com.truzzt.extension.logginghouse.client.multipart.ExtendedMessageProtocolClearing;
-import org.eclipse.edc.spi.types.domain.message.RemoteMessage;
+import org.eclipse.edc.spi.types.domain.message.ProtocolRemoteMessage;
 
 import java.net.URI;
 import java.net.URL;
 
-public record LogMessage(String counterPartyId,
-                         URL clearingHouseLogUrl,
-                         URI connectorBaseUrl,
-                         String eventToLog) implements RemoteMessage {
+public final class LogMessage extends ProtocolRemoteMessage {
+    private final String counterPartyId;
+    private final URL clearingHouseLogUrl;
+    private final URI connectorBaseUrl;
+    private final String eventToLog;
+
+    public LogMessage(String counterPartyId,
+                      URL clearingHouseLogUrl,
+                      URI connectorBaseUrl,
+                      String eventToLog) {
+        this.counterPartyId = counterPartyId;
+        this.clearingHouseLogUrl = clearingHouseLogUrl;
+        this.connectorBaseUrl = connectorBaseUrl;
+        this.eventToLog = eventToLog;
+    }
 
     @Override
     public String getProtocol() {
@@ -40,4 +51,13 @@ public record LogMessage(String counterPartyId,
     public String getCounterPartyId() {
         return counterPartyId;
     }
+
+    public URI getConnectorBaseUrl() {
+        return connectorBaseUrl;
+    }
+
+    public String getEventToLog() {
+        return eventToLog;
+    }
+
 }
