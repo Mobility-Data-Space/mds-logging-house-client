@@ -1,12 +1,12 @@
 [versions]
-edc = "0.15.0-20251117-SNAPSHOT"
+edc = "0.15.0"
 infomodel = "1.0.2-basecamp"
 okhttp = "5.3.2"
 json = "20231013"
 jackson = "2.20.1"
 jersey = "4.0.0"
 postgresql = "42.7.8"
-tractusx-edc = "0.11.0"
+tractusx-edc = "0.11.1"
 flyway = "9.0.1"
 
 [libraries]

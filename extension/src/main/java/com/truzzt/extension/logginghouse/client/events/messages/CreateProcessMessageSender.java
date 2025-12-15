@@ -40,15 +40,15 @@ public class CreateProcessMessageSender implements MultipartSenderDelegate<Creat
                 ._modelVersion_(IdsConstants.INFORMATION_MODEL_VERSION)
                 ._issued_(CalendarUtil.gregorianNow())
                 ._securityToken_(token)
-                ._issuerConnector_(createProcessMessage.connectorBaseUrl())
-                ._senderAgent_(createProcessMessage.connectorBaseUrl())
+                ._issuerConnector_(createProcessMessage.getConnectorBaseUrl())
+                ._senderAgent_(createProcessMessage.getConnectorBaseUrl())
                 .build();
     }
 
     @Override
     public String buildMessagePayload(CreateProcessMessage createProcessMessage) {
         var jo = new JSONObject();
-        jo.put("owners", createProcessMessage.processOwners());
+        jo.put("owners", createProcessMessage.getProcessOwners());
         return jo.toString();
     }
 
