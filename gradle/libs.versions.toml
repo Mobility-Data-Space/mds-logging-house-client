@@ -6,7 +6,7 @@ json = "20231013"
 jackson = "2.20.1"
 jersey = "3.1.11"
 postgresql = "42.7.8"
-tractusx-edc = "0.11.1"
+tractusx-edc = "0.11.2"
 flyway = "9.0.1"
 
 [libraries]
