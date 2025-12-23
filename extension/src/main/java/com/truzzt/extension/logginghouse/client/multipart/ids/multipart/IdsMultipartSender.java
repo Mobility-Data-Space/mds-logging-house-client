@@ -30,6 +30,7 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.ResponseBody;
 import org.eclipse.edc.http.spi.EdcHttpClient;
+import org.eclipse.edc.participantcontext.spi.service.ParticipantContextSupplier;
 import org.eclipse.edc.spi.EdcException;
 import org.eclipse.edc.spi.iam.IdentityService;
 import org.eclipse.edc.spi.iam.TokenParameters;
@@ -58,14 +59,16 @@ public class IdsMultipartSender {
     private final EdcHttpClient httpClient;
     private final IdentityService identityService;
     private final ObjectMapper objectMapper;
+    private final ParticipantContextSupplier participantContextSupplier;
 
     public IdsMultipartSender(Monitor monitor, EdcHttpClient httpClient,
                               IdentityService identityService,
-                              ObjectMapper objectMapper) {
+                              ObjectMapper objectMapper, ParticipantContextSupplier participantContextSupplier) {
         this.monitor = monitor;
         this.httpClient = httpClient;
         this.identityService = identityService;
         this.objectMapper = objectMapper;
+        this.participantContextSupplier = participantContextSupplier;
     }
 
     public <M extends RemoteMessage, R> CompletableFuture<StatusResult<R>> send(M request, MultipartSenderDelegate<M, R> senderDelegate) {
@@ -178,7 +181,13 @@ public class IdsMultipartSender {
                 .claims(SCOPE_CLAIM, IdsConstants.TOKEN_SCOPE)
                 .claims(AUDIENCE_CLAIM, recipientAddress)
                 .build();
-        return identityService.obtainClientCredentials("ignored", tokenParameters)
+
+        var participantContextServiceResult = participantContextSupplier.get();
+        if (participantContextServiceResult.failed()) {
+            return Result.failure("Cannot obtain participant context");
+        }
+        var participantContextId = participantContextServiceResult.getContent().getParticipantContextId();
+        return identityService.obtainClientCredentials(participantContextId, tokenParameters)
                 .map(credentials -> new DynamicAttributeTokenBuilder()
                         ._tokenFormat_(TokenFormat.JWT)
                         ._tokenValue_(credentials.getToken())
