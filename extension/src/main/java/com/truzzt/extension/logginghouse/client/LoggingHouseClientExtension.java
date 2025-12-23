@@ -46,10 +46,10 @@ import org.eclipse.edc.connector.controlplane.transfer.spi.event.TransferProcess
 import org.eclipse.edc.connector.controlplane.transfer.spi.event.TransferProcessTerminated;
 import org.eclipse.edc.connector.controlplane.transfer.spi.store.TransferProcessStore;
 import org.eclipse.edc.http.spi.EdcHttpClient;
+import org.eclipse.edc.participantcontext.single.spi.SingleParticipantContextSupplier;
 import org.eclipse.edc.runtime.metamodel.annotation.Extension;
 import org.eclipse.edc.runtime.metamodel.annotation.Inject;
 import org.eclipse.edc.runtime.metamodel.annotation.Requires;
-import org.eclipse.edc.runtime.metamodel.annotation.Setting;
 import org.eclipse.edc.spi.EdcException;
 import org.eclipse.edc.spi.event.EventEnvelope;
 import org.eclipse.edc.spi.event.EventRouter;
@@ -113,9 +113,6 @@ public class LoggingHouseClientExtension implements ServiceExtension {
             "ids", "https://w3id.org/idsa/core/",
             "idsc", "https://w3id.org/idsa/code/");
 
-    @Setting(key = "edc.participant.id")
-    private String participantId;
-
     @Inject
     private Hostname hostname;
     @Inject
@@ -128,20 +125,20 @@ public class LoggingHouseClientExtension implements ServiceExtension {
     private IdentityService identityService;
     @Inject
     private RemoteMessageDispatcherRegistry dispatcherRegistry;
-
     @Inject(required = false)
     private DataSourceRegistry dataSourceRegistry;
     @Inject(required = false)
     private TransactionContext transactionContext;
     @Inject(required = false)
     private QueryExecutor queryExecutor;
-
     @Inject
     private ContractNegotiationStore contractNegotiationStore;
     @Inject
     private TransferProcessStore transferProcessStore;
     @Inject
     private AssetIndex assetIndex;
+    @Inject
+    private SingleParticipantContextSupplier singleParticipantContextSupplier;
 
     private boolean enabled;
     private URL loggingHouseLogUrl;
@@ -167,13 +164,16 @@ public class LoggingHouseClientExtension implements ServiceExtension {
 
         migrationManager = initFlyway(context);
 
+        var participantId = singleParticipantContextSupplier.get().orElseThrow(f -> new EdcException("cannot obtain participant context: " + f.getFailureDetail()))
+                .getParticipantContextId();
+
         registerSerializerClearingHouseMessages(context);
 
         var store = initializeLoggingHouseMessageStore(context, typeManager);
-        registerEventSubscriber(context, store);
+        registerEventSubscriber(context, store, participantId);
 
         registerDispatcher(context);
-        workersManager = initializeWorkersManager(context, store);
+        workersManager = initializeWorkersManager(context, store, participantId);
     }
 
     @Override
@@ -197,6 +197,10 @@ public class LoggingHouseClientExtension implements ServiceExtension {
             // Sending a hello message to LoggingHouse
             monitor.info("Sending Hello Message to LoggingHouse.");
             var currentTime = System.currentTimeMillis();
+
+            var participantId = singleParticipantContextSupplier.get().orElseThrow(f -> new EdcException("cannot obtain participant context: " + f.getFailureDetail()))
+                    .getParticipantContextId();
+
             ConnectorAvailableEvent connectorAvailableEvent = new ConnectorAvailableEvent(
                     UUID.randomUUID().toString(),
                     participantId,
@@ -274,7 +278,7 @@ public class LoggingHouseClientExtension implements ServiceExtension {
         }
     }
 
-    private void registerEventSubscriber(ServiceExtensionContext context, LoggingHouseMessageStore loggingHouseMessageStore) {
+    private void registerEventSubscriber(ServiceExtensionContext context, LoggingHouseMessageStore loggingHouseMessageStore, String participantId) {
         monitor.debug("Registering event subscriber for LoggingHouseClientExtension");
 
         var eventSubscriber = new LoggingHouseEventSubscriber(
@@ -323,7 +327,7 @@ public class LoggingHouseClientExtension implements ServiceExtension {
         monitor.debug("Registered serializers for LoggingHouseClientExtension");
     }
 
-    private LoggingHouseWorkersManager initializeWorkersManager(ServiceExtensionContext context, LoggingHouseMessageStore store) {
+    private LoggingHouseWorkersManager initializeWorkersManager(ServiceExtensionContext context, LoggingHouseMessageStore store, String participantId) {
         var initialDelaySeconds = context.getSetting(LOGGINGHOUSE_EXTENSION_WORKERS_DELAY_SETTING, LOGGINGHOUSE_EXTENSION_WORKERS_DELAY_DEFAULT);
         var periodSeconds = context.getSetting(LOGGINGHOUSE_EXTENSION_WORKERS_PERIOD_SETTING, LOGGINGHOUSE_EXTENSION_WORKERS_PERIOD_DEFAULT);
         var executor = new WorkersExecutor(Duration.ofSeconds(periodSeconds), Duration.ofSeconds(initialDelaySeconds), monitor);
@@ -345,7 +349,7 @@ public class LoggingHouseClientExtension implements ServiceExtension {
         var logMessageSender = new LogMessageSender(monitor);
         var createProcessMessageSender = new CreateProcessMessageSender();
 
-        var idsMultipartSender = new IdsMultipartSender(monitor, httpClient, identityService, objectMapper);
+        var idsMultipartSender = new IdsMultipartSender(monitor, httpClient, identityService, objectMapper, singleParticipantContextSupplier);
         var dispatcher = new IdsMultipartClearingRemoteMessageDispatcher(idsMultipartSender);
         dispatcher.register(logMessageSender);
         dispatcher.register(createProcessMessageSender);
