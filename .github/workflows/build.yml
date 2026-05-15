@@ -28,7 +28,7 @@ jobs:
         env:
           USERNAME: ${{ github.actor }}
           TOKEN: ${{ github.token }}
-      - run: ./gradlew -Pversion=0.0.2-SNAPSHOT publish
+      - run: ./gradlew -Pversion=0.0.3-SNAPSHOT publish
         if: github.event_name != 'pull_request'
         env:
           USERNAME: ${{ github.actor }}
