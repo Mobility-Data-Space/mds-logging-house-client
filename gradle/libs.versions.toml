@@ -5,7 +5,7 @@ okhttp = "5.3.2"
 json = "20251224"
 jackson = "2.20.1"
 jersey = "3.1.11"
-postgresql = "42.7.8"
+postgresql = "42.7.11"
 tractusx-edc = "0.11.2"
 flyway = "11.20.2"
 
