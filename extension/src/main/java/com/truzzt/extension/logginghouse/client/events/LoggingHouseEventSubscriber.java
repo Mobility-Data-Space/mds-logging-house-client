@@ -34,6 +34,8 @@ import org.json.JSONObject;
 import java.time.ZonedDateTime;
 import java.util.Objects;
 
+import static org.eclipse.edc.spi.constants.CoreConstants.EDC_NAMESPACE;
+
 public class LoggingHouseEventSubscriber implements EventSubscriber {
 
     private final String participantId;
@@ -117,10 +119,10 @@ public class LoggingHouseEventSubscriber implements EventSubscriber {
                 monitor.warning("Asset with id " + contractAgreement.getAssetId() + " not found in asset index.");
             } else {
                 jo.put("AssetId", asset.getId());
-                jo.put("AssetName", asset.getName());
+                jo.put("AssetName", asset.getProperty(EDC_NAMESPACE + "name"));
                 jo.put("AssetDescription", asset.getDescription());
-                jo.put("AssetVersion", asset.getVersion());
-                jo.put("AssetContentType", asset.getContentType());
+                jo.put("AssetVersion", asset.getProperty(EDC_NAMESPACE + "version"));
+                jo.put("AssetContentType", asset.getProperty(EDC_NAMESPACE + "contenttype"));
                 jo.put("AssetProperties", asset.getProperties());
             }
         }

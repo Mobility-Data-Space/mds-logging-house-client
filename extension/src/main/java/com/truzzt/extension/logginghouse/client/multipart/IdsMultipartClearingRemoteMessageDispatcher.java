@@ -14,12 +14,52 @@
 
 package com.truzzt.extension.logginghouse.client.multipart;
 
-import com.truzzt.extension.logginghouse.client.multipart.ids.multipart.IdsMultipartRemoteMessageDispatcher;
 import com.truzzt.extension.logginghouse.client.multipart.ids.multipart.IdsMultipartSender;
+import com.truzzt.extension.logginghouse.client.multipart.ids.multipart.MultipartSenderDelegate;
+import org.eclipse.edc.connector.controlplane.transfer.spi.types.protocol.TransferCompletionMessage;
+import org.eclipse.edc.connector.controlplane.transfer.spi.types.protocol.TransferStartMessage;
+import org.eclipse.edc.connector.controlplane.transfer.spi.types.protocol.TransferTerminationMessage;
+import org.eclipse.edc.spi.EdcException;
+import org.eclipse.edc.spi.response.StatusResult;
+import org.eclipse.edc.spi.types.domain.message.ProtocolRemoteMessage;
+import org.eclipse.edc.spi.types.domain.message.RemoteMessage;
 
-public class IdsMultipartClearingRemoteMessageDispatcher extends IdsMultipartRemoteMessageDispatcher {
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+
+public class IdsMultipartClearingRemoteMessageDispatcher {
+
+    private final IdsMultipartSender multipartSender;
+    private final Map<Class<? extends RemoteMessage>, MultipartSenderDelegate<? extends RemoteMessage, ?>> delegates = new HashMap<>();
+    private final List<Class<? extends RemoteMessage>> unsupportedMessages = List.of(
+            TransferStartMessage.class,
+            TransferCompletionMessage.class,
+            TransferTerminationMessage.class
+    );
 
     public IdsMultipartClearingRemoteMessageDispatcher(IdsMultipartSender idsMultipartSender) {
-        super(idsMultipartSender);
+        this.multipartSender = idsMultipartSender;
+    }
+
+    public <M extends RemoteMessage, R> void register(MultipartSenderDelegate<M, R> delegate) {
+        delegates.put(delegate.getMessageType(), delegate);
+    }
+
+    public <T, M extends ProtocolRemoteMessage> CompletableFuture<StatusResult<T>> dispatch(Class<T> responseType, M message) {
+        Objects.requireNonNull(message, "Message was null");
+
+        if (unsupportedMessages.stream().anyMatch(it -> it.isInstance(message))) { // these messages are not supposed to be sent on ids-multipart.
+            return CompletableFuture.completedFuture(null);
+        }
+
+        var delegate = (MultipartSenderDelegate<M, T>) delegates.get(message.getClass());
+        if (delegate == null) {
+            throw new EdcException("Message sender not found for message type: " + message.getClass().getName());
+        }
+
+        return multipartSender.send(message, delegate);
     }
 }

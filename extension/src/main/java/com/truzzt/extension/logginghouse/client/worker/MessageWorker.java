@@ -17,10 +17,10 @@ package com.truzzt.extension.logginghouse.client.worker;
 import com.truzzt.extension.logginghouse.client.events.messages.CreateProcessMessage;
 import com.truzzt.extension.logginghouse.client.events.messages.LogMessage;
 import com.truzzt.extension.logginghouse.client.events.messages.LogMessageReceipt;
+import com.truzzt.extension.logginghouse.client.multipart.IdsMultipartClearingRemoteMessageDispatcher;
 import com.truzzt.extension.logginghouse.client.spi.store.LoggingHouseMessageStore;
 import com.truzzt.extension.logginghouse.client.spi.types.LoggingHouseMessage;
 import org.eclipse.edc.spi.EdcException;
-import org.eclipse.edc.spi.message.RemoteMessageDispatcherRegistry;
 import org.eclipse.edc.spi.monitor.Monitor;
 import org.eclipse.edc.spi.response.StatusResult;
 
@@ -37,7 +37,7 @@ import static java.lang.String.format;
 public class MessageWorker {
     private final String participantId;
     private final Monitor monitor;
-    private final RemoteMessageDispatcherRegistry dispatcherRegistry;
+    private final IdsMultipartClearingRemoteMessageDispatcher dispatcher;
     private final URI connectorBaseUrl;
     private final URL loggingHouseUrl;
     private final LoggingHouseMessageStore store;
@@ -46,14 +46,14 @@ public class MessageWorker {
 
     public MessageWorker(String participantId,
                          Monitor monitor,
-                         RemoteMessageDispatcherRegistry dispatcherRegistry,
+                         IdsMultipartClearingRemoteMessageDispatcher dispatcher,
                          URI connectorBaseUrl,
                          URL loggingHouseUrl,
                          LoggingHouseMessageStore store,
                          int retryLimit) {
         this.participantId = participantId;
         this.monitor = monitor;
-        this.dispatcherRegistry = dispatcherRegistry;
+        this.dispatcher = dispatcher;
         this.connectorBaseUrl = connectorBaseUrl;
         this.loggingHouseUrl = loggingHouseUrl;
         this.store = store;
@@ -130,7 +130,7 @@ public class MessageWorker {
         monitor.info("Creating process in LoggingHouse with id: " + message.getProcessId());
         var logMessage = new CreateProcessMessage(participantId, loggingHouseUrl, connectorBaseUrl, message.getProcessId(), processOwners);
 
-        return dispatcherRegistry.dispatch(participantId, Object.class, logMessage);
+        return dispatcher.dispatch(Object.class, logMessage);
     }
 
     public CompletableFuture<StatusResult<LogMessageReceipt>> logMessage(LoggingHouseMessage message, URL clearingHouseLogUrl) {
@@ -138,7 +138,7 @@ public class MessageWorker {
         monitor.info("Logging message to LoggingHouse with type " + message.getEventType() + " and id " + message.getEventId());
         var logMessage = new LogMessage(participantId, clearingHouseLogUrl, connectorBaseUrl, message.getEventToLog());
 
-        return dispatcherRegistry.dispatch(participantId, LogMessageReceipt.class, logMessage);
+        return dispatcher.dispatch(LogMessageReceipt.class, logMessage);
     }
 
     private void retryMessage(LoggingHouseMessage message) {

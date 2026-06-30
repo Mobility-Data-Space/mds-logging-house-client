@@ -14,10 +14,9 @@
 
 package com.truzzt.extension.logginghouse.client.worker;
 
+import com.truzzt.extension.logginghouse.client.multipart.IdsMultipartClearingRemoteMessageDispatcher;
 import com.truzzt.extension.logginghouse.client.spi.store.LoggingHouseMessageStore;
-import com.truzzt.extension.logginghouse.client.spi.types.LoggingHouseMessage;
 import org.eclipse.edc.spi.EdcException;
-import org.eclipse.edc.spi.message.RemoteMessageDispatcherRegistry;
 import org.eclipse.edc.spi.monitor.Monitor;
 import org.eclipse.edc.spi.system.Hostname;
 import org.jetbrains.annotations.NotNull;
@@ -26,9 +25,7 @@ import org.jetbrains.annotations.Nullable;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -43,7 +40,7 @@ public class LoggingHouseWorkersManager {
     private final int maxWorkers;
     private final int retriesLimit;
     private final LoggingHouseMessageStore store;
-    private final RemoteMessageDispatcherRegistry dispatcherRegistry;
+    private final IdsMultipartClearingRemoteMessageDispatcher dispatcher;
     private final URI connectorBaseUrl;
     private final URL loggingHouseUrl;
 
@@ -53,7 +50,7 @@ public class LoggingHouseWorkersManager {
                                       int maxWorkers,
                                       int retriesLimit,
                                       LoggingHouseMessageStore store,
-                                      RemoteMessageDispatcherRegistry dispatcherRegistry,
+                                      IdsMultipartClearingRemoteMessageDispatcher dispatcher,
                                       Hostname hostname,
                                       URL loggingHouseUrl) {
         this.participantId = participantId;
@@ -62,7 +59,7 @@ public class LoggingHouseWorkersManager {
         this.maxWorkers = maxWorkers;
         this.retriesLimit = retriesLimit;
         this.store = store;
-        this.dispatcherRegistry = dispatcherRegistry;
+        this.dispatcher = dispatcher;
         this.loggingHouseUrl = loggingHouseUrl;
 
         try {
@@ -77,7 +74,7 @@ public class LoggingHouseWorkersManager {
     }
 
     private void processPending() {
-        List<LoggingHouseMessage> messages = store.listPending();
+        var messages = store.listPending();
         if (messages.isEmpty()) {
             monitor.warning("No Messages to send, aborting execution");
             return;
@@ -104,7 +101,7 @@ public class LoggingHouseWorkersManager {
                 break;
             }
 
-            CompletableFuture<Boolean> taskFuture = worker.run(item)
+            var taskFuture = worker.run(item)
                     .whenComplete((updateResponse, throwable) -> {
                         if (throwable != null) {
                             monitor.severe(log(format("Unexpected exception happened during in worker %s", worker.getId())), throwable);
@@ -142,7 +139,7 @@ public class LoggingHouseWorkersManager {
     private ArrayBlockingQueue<MessageWorker> createWorkers(int numWorkers, int retriesLimit) {
 
         return new ArrayBlockingQueue<>(numWorkers, true, IntStream.range(0, numWorkers)
-                .mapToObj(i -> new MessageWorker(participantId, monitor, dispatcherRegistry, connectorBaseUrl, loggingHouseUrl, store, retriesLimit))
+                .mapToObj(i -> new MessageWorker(participantId, monitor, dispatcher, connectorBaseUrl, loggingHouseUrl, store, retriesLimit))
                 .collect(Collectors.toList()));
     }
 

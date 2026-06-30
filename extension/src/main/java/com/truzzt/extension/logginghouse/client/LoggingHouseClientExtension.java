@@ -54,7 +54,6 @@ import org.eclipse.edc.spi.EdcException;
 import org.eclipse.edc.spi.event.EventEnvelope;
 import org.eclipse.edc.spi.event.EventRouter;
 import org.eclipse.edc.spi.iam.IdentityService;
-import org.eclipse.edc.spi.message.RemoteMessageDispatcherRegistry;
 import org.eclipse.edc.spi.monitor.Monitor;
 import org.eclipse.edc.spi.system.Hostname;
 import org.eclipse.edc.spi.system.ServiceExtension;
@@ -89,17 +88,13 @@ import static com.truzzt.extension.logginghouse.client.ConfigConstants.LOGGINGHO
 import static com.truzzt.extension.logginghouse.client.ConfigConstants.LOGGINGHOUSE_RETRY_LIMIT_DEFAULT;
 import static com.truzzt.extension.logginghouse.client.ConfigConstants.LOGGINGHOUSE_RETRY_LIMIT_SETTING;
 import static com.truzzt.extension.logginghouse.client.ConfigConstants.LOGGINGHOUSE_URL_SETTING;
-import static com.truzzt.extension.logginghouse.client.multipart.ExtendedMessageProtocolClearing.IDS_EXTENDED_PROTOCOL_CLEARING;
 
 @Extension(value = LoggingHouseClientExtension.NAME)
 @Requires(value = {
         Hostname.class,
-
         TypeManager.class,
         EventRouter.class,
         IdentityService.class,
-        RemoteMessageDispatcherRegistry.class,
-
         ContractNegotiationStore.class,
         TransferProcessStore.class,
         AssetIndex.class
@@ -123,8 +118,6 @@ public class LoggingHouseClientExtension implements ServiceExtension {
     private EventRouter eventRouter;
     @Inject
     private IdentityService identityService;
-    @Inject
-    private RemoteMessageDispatcherRegistry dispatcherRegistry;
     @Inject(required = false)
     private DataSourceRegistry dataSourceRegistry;
     @Inject(required = false)
@@ -172,7 +165,7 @@ public class LoggingHouseClientExtension implements ServiceExtension {
         var store = initializeLoggingHouseMessageStore(context, typeManager);
         registerEventSubscriber(context, store, participantId);
 
-        registerDispatcher(context);
+        createDispatcher(context);
         workersManager = initializeWorkersManager(context, store, participantId);
     }
 
@@ -335,12 +328,14 @@ public class LoggingHouseClientExtension implements ServiceExtension {
         var maxWorkers = context.getSetting(LOGGINGHOUSE_EXTENSION_MAX_WORKERS_SETTING, LOGGINGHOUSE_EXTENSION_MAX_WORKERS_DEFAULT);
         var retriesLimit = context.getSetting(LOGGINGHOUSE_RETRY_LIMIT_SETTING, LOGGINGHOUSE_RETRY_LIMIT_DEFAULT);
 
-        return new LoggingHouseWorkersManager(participantId, executor, monitor, maxWorkers, retriesLimit, store, dispatcherRegistry,
+        var dispatcher = createDispatcher(context);
+
+        return new LoggingHouseWorkersManager(participantId, executor, monitor, maxWorkers, retriesLimit, store, dispatcher,
                 hostname, loggingHouseLogUrl
         );
     }
 
-    private void registerDispatcher(ServiceExtensionContext context) {
+    private IdsMultipartClearingRemoteMessageDispatcher createDispatcher(ServiceExtensionContext context) {
         monitor.debug("Registering IDS dispatch sender for LoggingHouseClientExtension");
 
         var httpClient = context.getService(EdcHttpClient.class);
@@ -353,7 +348,6 @@ public class LoggingHouseClientExtension implements ServiceExtension {
         var dispatcher = new IdsMultipartClearingRemoteMessageDispatcher(idsMultipartSender);
         dispatcher.register(logMessageSender);
         dispatcher.register(createProcessMessageSender);
-
-        dispatcherRegistry.register(IDS_EXTENDED_PROTOCOL_CLEARING, dispatcher);
+        return dispatcher;
     }
 }
