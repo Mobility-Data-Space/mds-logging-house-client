@@ -20,7 +20,7 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
       - name: Validate Gradle wrapper
-        uses: gradle/actions/wrapper-validation@v5
+        uses: gradle/actions/wrapper-validation@v6
       - name: Version
         id: version
         run: echo "::set-output name=ref_name::${GITHUB_REF_NAME#v}"
