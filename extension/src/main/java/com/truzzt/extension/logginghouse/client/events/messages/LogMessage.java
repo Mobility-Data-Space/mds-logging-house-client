@@ -16,7 +16,7 @@
 package com.truzzt.extension.logginghouse.client.events.messages;
 
 import com.truzzt.extension.logginghouse.client.multipart.ExtendedMessageProtocolClearing;
-import org.eclipse.edc.spi.types.domain.message.ProtocolRemoteMessage;
+import org.eclipse.edc.controlplane.ProtocolRemoteMessage;
 
 import java.net.URI;
 import java.net.URL;

@@ -113,7 +113,7 @@ public class LoggingHouseEventSubscriber implements EventSubscriber {
         // Check if connector is the provider
         if (contractAgreement.getProviderId().equals(participantId)) {
             // In case of the provider, log asset information
-            var asset = assetIndex.findById(contractAgreement.getAssetId());
+            var asset = assetIndex.findById(participantId, contractAgreement.getAssetId());
 
             if (asset == null) {
                 monitor.warning("Asset with id " + contractAgreement.getAssetId() + " not found in asset index.");

@@ -18,16 +18,30 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.truzzt.extension.logginghouse.client.multipart.MultiContextJsonLdSerializer;
+import de.fraunhofer.iais.eis.LogMessage;
+import de.fraunhofer.iais.eis.RequestMessage;
 
 import java.text.SimpleDateFormat;
+import java.util.Map;
 
 public final class JsonLd {
+
+    private static final Map<String, String> CONTEXT_MAP = Map.of(
+            "cat", "http://w3id.org/mds/data-categories#",
+            "ids", "https://w3id.org/idsa/core/",
+            "idsc", "https://w3id.org/idsa/code/");
+
+    private JsonLd() {
+    }
 
     public static ObjectMapper getObjectMapper() {
         var customMapper = new ObjectMapper();
         customMapper.registerModule(new JavaTimeModule());
         customMapper.registerModule(new JsonLdModule());
+        customMapper.registerModule(clearingHouseMessagesModule());
 
         customMapper.setDateFormat(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX"));
         customMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
@@ -37,5 +51,12 @@ public final class JsonLd {
         customMapper.configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true);
 
         return customMapper;
+    }
+
+    private static SimpleModule clearingHouseMessagesModule() {
+        var module = new SimpleModule();
+        module.addSerializer(LogMessage.class, new MultiContextJsonLdSerializer<>(LogMessage.class, CONTEXT_MAP));
+        module.addSerializer(RequestMessage.class, new MultiContextJsonLdSerializer<>(RequestMessage.class, CONTEXT_MAP));
+        return module;
     }
 }

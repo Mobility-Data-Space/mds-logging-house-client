@@ -1,30 +1,29 @@
 [versions]
-edc = "0.18.0"
+edc = "1.0.0-RC5"
 infomodel = "1.0.2-basecamp"
 okhttp = "5.3.2"
 json = "20260522"
 jackson = "2.21.3"
-jersey = "3.1.11"
-postgresql = "42.7.12"
+jersey = "4.0.3"
+postgresql = "42.7.8"
 tractusx-edc = "0.12.0"
 flyway = "11.20.2"
 
 [libraries]
 edc-controlplane-base-bom = { module = "org.eclipse.edc:controlplane-base-bom", version.ref = "edc" }
 edc-controlplane-feature-sql-bom = { module = "org.eclipse.edc:controlplane-feature-sql-bom", version.ref = "edc" }
-edc-dataplane-base-bom = { module = "org.eclipse.edc:dataplane-base-bom", version.ref = "edc" }
-edc-dataplane-feature-sql-bom = { module = "org.eclipse.edc:dataplane-feature-sql-bom", version.ref = "edc" }
 edc-control-plane-spi = { module = "org.eclipse.edc:control-plane-spi", version.ref = "edc" }
-edc-http-spi = { module = "org.eclipse.edc:http-spi", version.ref = "edc" }
-edc-participant-context-single-spi = { module = "org.eclipse.edc:participant-context-single-spi", version.ref = "edc" }
-edc-transaction-datasource-spi = { module = "org.eclipse.edc:transaction-datasource-spi", version.ref = "edc" }
-edc-sql-lib = { module = "org.eclipse.edc:sql-lib", version.ref = "edc" }
+edc-core-spi = { module = "org.eclipse.edc:core-spi", version.ref = "edc" }
+edc-core-lib = { module = "org.eclipse.edc:core-lib", version.ref = "edc" }
 edc-vault-hashicorp = { module = "org.eclipse.edc:vault-hashicorp", version.ref = "edc" }
 
 # these deps have been removed from upstream and they are yet not available on mds-edc, since they are used only for the
 # launchers that are supposedly used for testing, we can pin them to the latest version for the time being
 edc-oauth2-daps = { module = "org.eclipse.edc:oauth2-daps", version = "0.13.2" }
 edc-oauth2-service = { module = "org.eclipse.edc:oauth2-service", version = "0.13.2" }
+
+edc-dataplane-base-bom = { module = "org.eclipse.edc:dataplane-base-bom", version = "0.18.1" }
+edc-dataplane-feature-sql-bom = { module = "org.eclipse.edc:dataplane-feature-sql-bom", version = "0.18.1" }
 
 tractusx-edc-control-plane-migration = { module = "org.eclipse.tractusx.edc:control-plane-migration", version.ref = "tractusx-edc" }
 tractusx-edc-data-plane-migration = { module = "org.eclipse.tractusx.edc:data-plane-migration", version.ref = "tractusx-edc" }
