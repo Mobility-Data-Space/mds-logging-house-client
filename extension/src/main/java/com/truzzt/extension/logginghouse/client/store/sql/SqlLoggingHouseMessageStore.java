@@ -15,7 +15,6 @@
 
 package com.truzzt.extension.logginghouse.client.store.sql;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.truzzt.extension.logginghouse.client.spi.store.LoggingHouseMessageStore;
 import com.truzzt.extension.logginghouse.client.spi.types.LoggingHouseMessage;
 import com.truzzt.extension.logginghouse.client.spi.types.LoggingHouseMessageStatus;
@@ -25,6 +24,7 @@ import org.eclipse.edc.sql.QueryExecutor;
 import org.eclipse.edc.sql.store.AbstractSqlStore;
 import org.eclipse.edc.transaction.datasource.spi.DataSourceRegistry;
 import org.eclipse.edc.transaction.spi.TransactionContext;
+import tools.jackson.databind.ObjectMapper;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;

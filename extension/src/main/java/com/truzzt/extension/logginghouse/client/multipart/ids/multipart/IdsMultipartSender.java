@@ -29,6 +29,7 @@ import okhttp3.MultipartReader;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.ResponseBody;
+import org.eclipse.edc.controlplane.ProtocolRemoteMessage;
 import org.eclipse.edc.http.spi.EdcHttpClient;
 import org.eclipse.edc.participantcontext.spi.service.ParticipantContextSupplier;
 import org.eclipse.edc.spi.EdcException;
@@ -37,7 +38,6 @@ import org.eclipse.edc.spi.iam.TokenParameters;
 import org.eclipse.edc.spi.monitor.Monitor;
 import org.eclipse.edc.spi.response.StatusResult;
 import org.eclipse.edc.spi.result.Result;
-import org.eclipse.edc.spi.types.domain.message.RemoteMessage;
 import org.glassfish.jersey.media.multipart.ContentDisposition;
 
 import java.io.ByteArrayInputStream;
@@ -71,7 +71,7 @@ public class IdsMultipartSender {
         this.participantContextSupplier = participantContextSupplier;
     }
 
-    public <M extends RemoteMessage, R> CompletableFuture<StatusResult<R>> send(M request, MultipartSenderDelegate<M, R> senderDelegate) {
+    public <M extends ProtocolRemoteMessage, R> CompletableFuture<StatusResult<R>> send(M request, MultipartSenderDelegate<M, R> senderDelegate) {
         var remoteConnectorAddress = request.getCounterPartyAddress();
 
         // Get Dynamic Attribute Token
@@ -228,7 +228,7 @@ public class IdsMultipartSender {
                 .build();
     }
 
-    public void checkResponseType(MultipartResponse<?> response, MultipartSenderDelegate<? extends RemoteMessage, ?> senderDelegate) {
+    public void checkResponseType(MultipartResponse<?> response, MultipartSenderDelegate<? extends ProtocolRemoteMessage, ?> senderDelegate) {
         var type = senderDelegate.getAllowedResponseTypes();
         if (!type.contains(response.header().getClass())) {
             throw new EdcException(format("Received %s but expected %s.", response.header().getClass(), type));

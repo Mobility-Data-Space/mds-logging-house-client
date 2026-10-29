@@ -19,10 +19,9 @@ import com.truzzt.extension.logginghouse.client.multipart.ids.multipart.Multipar
 import org.eclipse.edc.connector.controlplane.transfer.spi.types.protocol.TransferCompletionMessage;
 import org.eclipse.edc.connector.controlplane.transfer.spi.types.protocol.TransferStartMessage;
 import org.eclipse.edc.connector.controlplane.transfer.spi.types.protocol.TransferTerminationMessage;
+import org.eclipse.edc.controlplane.ProtocolRemoteMessage;
 import org.eclipse.edc.spi.EdcException;
 import org.eclipse.edc.spi.response.StatusResult;
-import org.eclipse.edc.spi.types.domain.message.ProtocolRemoteMessage;
-import org.eclipse.edc.spi.types.domain.message.RemoteMessage;
 
 import java.util.HashMap;
 import java.util.List;
@@ -33,8 +32,8 @@ import java.util.concurrent.CompletableFuture;
 public class IdsMultipartClearingRemoteMessageDispatcher {
 
     private final IdsMultipartSender multipartSender;
-    private final Map<Class<? extends RemoteMessage>, MultipartSenderDelegate<? extends RemoteMessage, ?>> delegates = new HashMap<>();
-    private final List<Class<? extends RemoteMessage>> unsupportedMessages = List.of(
+    private final Map<Class<? extends ProtocolRemoteMessage>, MultipartSenderDelegate<? extends ProtocolRemoteMessage, ?>> delegates = new HashMap<>();
+    private final List<Class<? extends ProtocolRemoteMessage>> unsupportedMessages = List.of(
             TransferStartMessage.class,
             TransferCompletionMessage.class,
             TransferTerminationMessage.class
@@ -44,7 +43,7 @@ public class IdsMultipartClearingRemoteMessageDispatcher {
         this.multipartSender = idsMultipartSender;
     }
 
-    public <M extends RemoteMessage, R> void register(MultipartSenderDelegate<M, R> delegate) {
+    public <M extends ProtocolRemoteMessage, R> void register(MultipartSenderDelegate<M, R> delegate) {
         delegates.put(delegate.getMessageType(), delegate);
     }
 

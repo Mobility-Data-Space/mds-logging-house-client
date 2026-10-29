@@ -16,11 +16,11 @@ package com.truzzt.extension.logginghouse.client.multipart.ids.multipart;
 
 import de.fraunhofer.iais.eis.DynamicAttributeToken;
 import de.fraunhofer.iais.eis.Message;
-import org.eclipse.edc.spi.types.domain.message.RemoteMessage;
+import org.eclipse.edc.controlplane.ProtocolRemoteMessage;
 
 import java.util.List;
 
-public interface MultipartSenderDelegate<M extends RemoteMessage, R> {
+public interface MultipartSenderDelegate<M extends ProtocolRemoteMessage, R> {
 
     Message buildMessageHeader(M request, DynamicAttributeToken token) throws Exception;
 

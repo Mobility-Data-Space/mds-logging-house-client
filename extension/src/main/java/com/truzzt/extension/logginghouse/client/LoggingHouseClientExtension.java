@@ -22,7 +22,6 @@ import com.truzzt.extension.logginghouse.client.events.messages.LogMessageSender
 import com.truzzt.extension.logginghouse.client.flyway.FlywayService;
 import com.truzzt.extension.logginghouse.client.flyway.migration.DatabaseMigrationManager;
 import com.truzzt.extension.logginghouse.client.multipart.IdsMultipartClearingRemoteMessageDispatcher;
-import com.truzzt.extension.logginghouse.client.multipart.MultiContextJsonLdSerializer;
 import com.truzzt.extension.logginghouse.client.multipart.ids.jsonld.JsonLd;
 import com.truzzt.extension.logginghouse.client.multipart.ids.multipart.IdsMultipartSender;
 import com.truzzt.extension.logginghouse.client.spi.store.LoggingHouseMessageStore;
@@ -31,8 +30,6 @@ import com.truzzt.extension.logginghouse.client.store.sql.SqlLoggingHouseMessage
 import com.truzzt.extension.logginghouse.client.store.sql.schema.postgres.PostgresDialectStatements;
 import com.truzzt.extension.logginghouse.client.worker.LoggingHouseWorkersManager;
 import com.truzzt.extension.logginghouse.client.worker.WorkersExecutor;
-import de.fraunhofer.iais.eis.LogMessage;
-import de.fraunhofer.iais.eis.RequestMessage;
 import org.eclipse.edc.connector.controlplane.asset.spi.index.AssetIndex;
 import org.eclipse.edc.connector.controlplane.contract.spi.event.contractnegotiation.ContractNegotiationAgreed;
 import org.eclipse.edc.connector.controlplane.contract.spi.event.contractnegotiation.ContractNegotiationFinalized;
@@ -66,7 +63,6 @@ import org.eclipse.edc.transaction.spi.TransactionContext;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.Duration;
-import java.util.Map;
 import java.util.UUID;
 
 import static com.truzzt.extension.logginghouse.client.ConfigConstants.DATASOURCE_NAME_SETTING;
@@ -102,11 +98,6 @@ import static com.truzzt.extension.logginghouse.client.ConfigConstants.LOGGINGHO
 public class LoggingHouseClientExtension implements ServiceExtension {
 
     public static final String NAME = "LoggingHouseClientExtension";
-    private static final String TYPE_MANAGER_SERIALIZER_KEY = "ids-clearinghouse";
-    private static final Map<String, String> CONTEXT_MAP = Map.of(
-            "cat", "http://w3id.org/mds/data-categories#",
-            "ids", "https://w3id.org/idsa/core/",
-            "idsc", "https://w3id.org/idsa/code/");
 
     @Inject
     private Hostname hostname;
@@ -159,8 +150,6 @@ public class LoggingHouseClientExtension implements ServiceExtension {
 
         var participantId = singleParticipantContextSupplier.get().orElseThrow(f -> new EdcException("cannot obtain participant context: " + f.getFailureDetail()))
                 .getParticipantContextId();
-
-        registerSerializerClearingHouseMessages(context);
 
         var store = initializeLoggingHouseMessageStore(context, typeManager);
         registerEventSubscriber(context, store, participantId);
@@ -300,26 +289,6 @@ public class LoggingHouseClientExtension implements ServiceExtension {
         monitor.debug("Registered event subscriber for LoggingHouseClientExtension");
     }
 
-    private void registerSerializerClearingHouseMessages(ServiceExtensionContext context) {
-        monitor.debug("Registering serializers for LoggingHouseClientExtension");
-
-        typeManager.registerContext(TYPE_MANAGER_SERIALIZER_KEY, JsonLd.getObjectMapper());
-        registerCommonTypes(typeManager);
-
-        monitor.debug("Registered serializers for LoggingHouseClientExtension");
-    }
-
-    private void registerCommonTypes(TypeManager typeManager) {
-        monitor.debug("Registering serializers for LoggingHouseClientExtension");
-
-        typeManager.registerSerializer(TYPE_MANAGER_SERIALIZER_KEY, LogMessage.class,
-                new MultiContextJsonLdSerializer<>(LogMessage.class, CONTEXT_MAP));
-        typeManager.registerSerializer(TYPE_MANAGER_SERIALIZER_KEY, RequestMessage.class,
-                new MultiContextJsonLdSerializer<>(RequestMessage.class, CONTEXT_MAP));
-
-        monitor.debug("Registered serializers for LoggingHouseClientExtension");
-    }
-
     private LoggingHouseWorkersManager initializeWorkersManager(ServiceExtensionContext context, LoggingHouseMessageStore store, String participantId) {
         var initialDelaySeconds = context.getSetting(LOGGINGHOUSE_EXTENSION_WORKERS_DELAY_SETTING, LOGGINGHOUSE_EXTENSION_WORKERS_DELAY_DEFAULT);
         var periodSeconds = context.getSetting(LOGGINGHOUSE_EXTENSION_WORKERS_PERIOD_SETTING, LOGGINGHOUSE_EXTENSION_WORKERS_PERIOD_DEFAULT);
@@ -339,7 +308,7 @@ public class LoggingHouseClientExtension implements ServiceExtension {
         monitor.debug("Registering IDS dispatch sender for LoggingHouseClientExtension");
 
         var httpClient = context.getService(EdcHttpClient.class);
-        var objectMapper = typeManager.getMapper(TYPE_MANAGER_SERIALIZER_KEY);
+        var objectMapper = JsonLd.getObjectMapper();
 
         var logMessageSender = new LogMessageSender(monitor);
         var createProcessMessageSender = new CreateProcessMessageSender();
